@@ -1,0 +1,79 @@
+services:
+  _defaults:
+    public: true
+    autowire: true
+
+  prestashop.core.grid.definition.factory.business_entity:
+    class: PrestaShop\PrestaShop\Core\Grid\Definition\Factory\BusinessEntityGridDefinitionFactory
+    arguments:
+      $hookDispatcher: '@prestashop.core.hook.dispatcher'
+    calls:
+      - [ setTranslator, [ '@translator' ] ]
+    tags:
+      - { name: core.grid_definition_factory }
+
+  PrestaShop\PrestaShop\Core\Grid\Query\BusinessEntityQueryBuilder:
+    arguments:
+      $connection: '@doctrine.dbal.default_connection'
+      $dbPrefix: '%database_prefix%'
+      $searchCriteriaApplicator: '@PrestaShop\PrestaShop\Core\Grid\Query\DoctrineSearchCriteriaApplicator'
+
+  prestashop.core.grid.data.factory.business_entity:
+    class: PrestaShop\PrestaShop\Core\Grid\Data\Factory\DoctrineGridDataFactory
+    arguments:
+      $gridQueryBuilder: '@PrestaShop\PrestaShop\Core\Grid\Query\BusinessEntityQueryBuilder'
+      $hookDispatcher: '@prestashop.core.hook.dispatcher'
+      $queryParser: '@prestashop.core.grid.query.doctrine_query_parser'
+      $gridId: 'business_entity'
+
+  prestashop.core.grid.grid_factory.business_entity:
+    class: PrestaShop\PrestaShop\Core\Grid\GridFactory
+    arguments:
+      - '@prestashop.core.grid.definition.factory.business_entity'
+      - '@prestashop.core.grid.data.factory.business_entity'
+      - '@prestashop.core.grid.filter.form_factory'
+      - '@prestashop.core.hook.dispatcher'
+
+  PrestaShop\PrestaShop\Adapter\BusinessEntity\Repository\BusinessEntityRepository:
+    arguments:
+      $entityManager: '@doctrine.orm.entity_manager'
+
+  PrestaShop\PrestaShop\Adapter\BusinessEntity\QueryHandler\GetBusinessEntityForViewingHandler:
+    public: false
+    tags:
+      - { name: messenger.message_handler }
+  
+  PrestaShop\PrestaShop\Core\Domain\BusinessEntity\CommandHandler\GetPendingCountCommandHandler:
+    arguments:
+      - '@PrestaShop\PrestaShop\Adapter\BusinessEntity\Repository\BusinessEntityRepository'
+  
+  PrestaShop\PrestaShop\Core\Grid\Query\CustomerB2BQueryBuilder:
+    arguments:
+      $connection: '@doctrine.dbal.default_connection'
+      $dbPrefix: '%database_prefix%'
+      $searchCriteriaApplicator: '@PrestaShop\PrestaShop\Core\Grid\Query\DoctrineSearchCriteriaApplicator'
+      
+  prestashop.core.grid.definition.factory.simple_customer_b2b_grid_definition_factory:
+    class: PrestaShop\PrestaShop\Core\Grid\Definition\Factory\SimpleCustomerB2BGridDefinitionFactory
+    arguments:
+      $hookDispatcher: '@prestashop.core.hook.dispatcher'
+    calls:
+      - [ setTranslator, [ '@translator' ] ]
+    tags:
+      - { name: core.grid_definition_factory }
+  
+  prestashop.core.grid.data.factory.customer_b2b:
+    class: PrestaShop\PrestaShop\Core\Grid\Data\Factory\DoctrineGridDataFactory
+    arguments:
+      - '@PrestaShop\PrestaShop\Core\Grid\Query\CustomerB2BQueryBuilder'
+      - '@prestashop.core.hook.dispatcher'
+      - '@prestashop.core.grid.query.doctrine_query_parser'
+      - 'simple_customer_b2b'
+
+  prestashop.core.grid.grid_factory.customer_b2b:
+    class: PrestaShop\PrestaShop\Core\Grid\GridFactory
+    arguments:
+      - '@prestashop.core.grid.definition.factory.simple_customer_b2b_grid_definition_factory'
+      - '@prestashop.core.grid.data.factory.customer_b2b'
+      - '@prestashop.core.grid.filter.form_factory'
+      - '@prestashop.core.hook.dispatcher'

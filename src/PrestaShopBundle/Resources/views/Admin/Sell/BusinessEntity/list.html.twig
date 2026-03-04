@@ -5,5 +5,36 @@
 {% extends '@PrestaShop/Admin/layout.html.twig' %}
 
 {% block content %}
-{# empty for now #}
+
+  {% if pendingCount > 0 %}
+    <div class="alert alert-info" role="alert">
+      <p class="mb-1">
+        <strong>{{ 'Pending validation(s).'|trans({}, 'Admin.Catalog.Help') }}</strong>
+      </p>
+      <p class="mb-1">
+        {{ 'There are %pendingCount% business entities waiting for validation.'|trans({'%pendingCount%': pendingCount }, 'Admin.Catalog.Help')|raw }}
+      </p>
+      {% if not isPendingFilter and pendingCount > 0 %}
+      <p class="alert-text">
+        <a class="" href="{{ pendingUrl }}">
+          {{ 'Review pending'|trans({}, 'Admin.Orderscustomers.Feature') }}
+        </a>
+      </p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% include '@PrestaShop/Admin/Common/Grid/grid_panel.html.twig' with {'grid': businessEntityGrid} %}
+
+{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  
+  <script src="{{ asset('themes/new-theme/public/business_entities.bundle.js') }}"></script>
+  <script src="{{ asset('themes/default/js/bundle/pagination.js') }}"></script>
 {% endblock %}

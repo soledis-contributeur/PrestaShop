@@ -4,12 +4,20 @@
  * docs/licenses/LICENSE.txt file that was distributed with this source code.
  */
 
+declare(strict_types=1);
+
 namespace PrestaShopBundle\Controller\Admin\Sell\BusinessEntity;
 
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\GetPendingCountCommand;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\CommandHandler\GetPendingCountCommandHandler;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityBillingAddressConstraintException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\UnableToCreateBusinessEntityAddress;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Query\GetBusinessEntityForViewing;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Builder\FormBuilderInterface;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Handler\FormHandlerInterface;
+use PrestaShop\PrestaShop\Core\Grid\Filter\BusinessEntityFilters;
+use PrestaShop\PrestaShop\Core\Grid\Filter\CustomerB2BFilters;
+use PrestaShop\PrestaShop\Core\Grid\Presenter\GridPresenterInterface;
 use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
 use PrestaShopBundle\Form\Admin\Sell\BusinessEntity\BusinessEntityType;
 use PrestaShopBundle\Security\Attribute\AdminSecurity;
@@ -23,12 +31,94 @@ use Throwable;
  */
 class BusinessEntitiesController extends PrestaShopAdminController
 {
-    #[AdminSecurity("is_granted('read', 'AdminBusinessEntities')")]
-    public function listAction(): Response
-    {
-        return $this->render('@PrestaShop/Admin/Sell/BusinessEntity/list.html.twig', [
-            'layoutHeaderToolbarBtn' => $this->getBusinessEntitiesToolbarButtons(),
+    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
+    public function listAction(
+        Request $request,
+        #[Autowire(service: 'prestashop.core.grid.grid_factory.business_entity')]
+        object $businessEntityGridFactory,
+        #[Autowire(service: 'prestashop.core.grid.presenter.grid_presenter')]
+        GridPresenterInterface $gridPresenter,
+        GetPendingCountCommandHandler $getPendingCountCommandHandler
+    ): Response {
+        /** @var array<string, mixed> $gridParams */
+        $gridParams = $request->query->all(BusinessEntityFilters::GRID_ID);
+
+        $orderBy = $request->query->get('orderBy', 'id_business_entity');
+        $sortOrder = $request->query->get('sortOrder', 'ASC');
+
+        $gridParams['orderBy'] = $orderBy;
+        $gridParams['sortOrder'] = $sortOrder;
+
+        $filters = new BusinessEntityFilters($gridParams);
+
+        $grid = $businessEntityGridFactory->getGrid($filters, $orderBy, $sortOrder);
+
+        $businessEntityGrid = $gridPresenter->present($grid);
+
+        $pendingCount = $getPendingCountCommandHandler->handle(new GetPendingCountCommand());
+
+        $currentStatusFilter = $filters->getFilters()['status'] ?? null;
+        $isPendingFilter = ($currentStatusFilter === 'pending');
+
+        $pendingUrl = $this->generateUrl('admin_business_entities_list', [
+            BusinessEntityFilters::GRID_ID => [
+                'filters' => ['status' => 'pending'],
+            ],
         ]);
+
+        return $this->render(
+            '@PrestaShop/Admin/Sell/BusinessEntity/list.html.twig',
+            [
+                'help_link' => $this->generateSidebarLink($request->attributes->get('_legacy_controller')),
+                'enableSidebar' => true,
+                'layoutTitle' => $this->trans('Business entities', [], 'Admin.Navigation.Menu'),
+                'layoutHeaderToolbarBtn' => $this->getBusinessEntitiesToolbarButtons(),
+                'businessEntityGrid' => $businessEntityGrid,
+                'pendingCount' => $pendingCount,
+                'pendingUrl' => $pendingUrl,
+                'isPendingFilter' => $isPendingFilter,
+                'orderBy' => $orderBy,
+                'sortOrder' => $sortOrder,
+            ]
+        );
+    }
+
+    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
+    public function viewAction(
+        Request $request,
+        int $businessEntityId,
+        #[Autowire(service: 'prestashop.core.grid.grid_factory.customer_b2b')]
+        object $customerB2BGridFactory,
+        #[Autowire(service: 'prestashop.core.grid.presenter.grid_presenter')]
+        GridPresenterInterface $gridPresenter
+    ): Response {
+        $businessEntityForViewing = $this->dispatchQuery(
+            new GetBusinessEntityForViewing($businessEntityId)
+        );
+
+        $orderBy = $request->query->get('orderBy', 'id_customer_b2b');
+        $sortOrder = $request->query->get('sortOrder', 'ASC');
+
+        $gridParams['filters'] = ['businessEntityId' => $businessEntityId];
+        $gridParams['orderBy'] = $orderBy;
+        $gridParams['sortOrder'] = $sortOrder;
+
+        $filters = new CustomerB2BFilters($gridParams);
+
+        $customerB2BGrid = $customerB2BGridFactory->getGrid($filters, $orderBy, $sortOrder, $businessEntityId);
+        $customerB2BGridRendered = $gridPresenter->present($customerB2BGrid);
+
+        return $this->render(
+            '@PrestaShop/Admin/Sell/BusinessEntity/view.html.twig',
+            [
+                'help_link' => $this->generateSidebarLink($request->attributes->get('_legacy_controller')),
+                'enableSidebar' => true,
+                'layoutHeaderToolbarBtn' => $this->getBusinessEntityViewToolbarButtons($businessEntityId),
+                'businessEntity' => $businessEntityForViewing,
+                'businessEntityId' => $businessEntityId,
+                'customerB2bGrid' => $customerB2BGridRendered,
+            ]
+        );
     }
 
     #[AdminSecurity("is_granted('create', 'AdminBusinessEntities')", message: 'You do not have permission to create this.', redirectRoute: 'admin_business_entities_list')]
@@ -86,6 +176,25 @@ class BusinessEntitiesController extends PrestaShopAdminController
         );
     }
 
+    #[AdminSecurity("is_granted('update', request.get('_legacy_controller'))", message: 'You do not have permission to edit this.', redirectRoute: 'admin_business_entities_list')]
+    public function editAction(
+        int $businessEntityId,
+        Request $request,
+    ): Response {
+        return $this->redirectToRoute('admin_business_entities_list');
+    }
+
+    #[AdminSecurity("is_granted('delete', request.get('_legacy_controller'))", message: 'You do not have permission to delete this.', redirectRoute: 'admin_business_entities_list')]
+    public function bulkDeleteAction(
+        Request $request
+    ): Response {
+        $businessEntityIds = $request->get('business_entities_bulk');
+
+        $this->addFlash('success', $this->trans('Successfully deleted selected business entities.', [], 'Admin.Notifications.Success'));
+
+        return $this->redirectToRoute('admin_business_entities_list');
+    }
+
     protected function getBusinessEntitiesToolbarButtons(): array
     {
         $toolbarButtons = [];
@@ -94,6 +203,19 @@ class BusinessEntitiesController extends PrestaShopAdminController
             'href' => $this->generateUrl('admin_business_entities_create'),
             'desc' => $this->trans('Add new business entity', [], 'Admin.Orderscustomers.Feature'),
             'icon' => 'add_circle_outline',
+        ];
+
+        return $toolbarButtons;
+    }
+
+    private function getBusinessEntityViewToolbarButtons(int $businessEntityId): array
+    {
+        $toolbarButtons = [];
+
+        $toolbarButtons['edit'] = [
+            'href' => $this->generateUrl('admin_business_entities_edit', ['businessEntityId' => $businessEntityId]),
+            'desc' => $this->trans('Edit', [], 'Admin.Orderscustomers.Feature'),
+            'icon' => 'mode_edit',
         ];
 
         return $toolbarButtons;

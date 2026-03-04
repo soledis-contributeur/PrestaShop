@@ -1,0 +1,54 @@
+{#
+ # For the full copyright and license information, please view the
+ # docs/licenses/LICENSE.txt file that was distributed with this source code.
+ #}
+
+{% set invoice = businessEntity.getInvoiceAddress %}
+{% set delivery = businessEntity.getDeliveryAddress %}
+{% set addressesCount = 0 %}
+{% if invoice %}{% set addressesCount = addressesCount + 1 %}{% endif %}
+{% if delivery and (not invoice or delivery.getAddressId != invoice.getAddressId) %}
+  {% set addressesCount = addressesCount + 1 %}
+{% endif %}
+
+<div class="card">
+  <h3 class="card-header">
+    {{ 'Company information'|trans({}, 'Admin.Global') }}
+  </h3>
+
+  <div class="card-body">
+
+    <div class="mx-4 my-3">
+      <div class="kpi-content">
+		<i class="material-icons">people</i>
+        <span class="value">{{ businessEntity.getLinkedCustomersCount }}</span>
+		<span class="title">{{ 'Linked'|trans({}, 'Admin.Global') }}</span>
+      </div>
+	</div>
+    <div class="mx-4 my-3">
+      <div class="kpi-content">
+          <i class="material-icons">location_on</i>
+          <span class="value">{{ addressesCount }}</span>
+          <span class="title">{{ 'addresses'|trans({}, 'Admin.Global') }}</span>
+      </div>
+    </div>
+    <hr>
+
+    <div class="small text-muted">
+      <div class="d-flex">
+        <span>
+          <i class="material-icons">schedule</i>
+          {{ 'Created'|trans({}, 'Admin.Global') }} 
+          {{ businessEntity.getCreatedAt|date('M d, Y') }}
+        </span>
+      </div>
+      <div class="d-flex mt-3">
+        <span>
+          <i class="material-icons">update</i>
+          {{ 'Updated'|trans({}, 'Admin.Global') }} 
+          {{ businessEntity.getUpdatedAt|date('M d, Y') }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

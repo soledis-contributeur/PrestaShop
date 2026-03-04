@@ -1,0 +1,20 @@
+{#
+ # For the full copyright and license information, please view the
+ # docs/licenses/LICENSE.txt file that was distributed with this source code.
+ #}
+
+<div class="card">
+  <h3 class="card-header">
+    {{ 'Linked B2B customers'|trans({}, 'Admin.Global') }}
+  </h3>
+
+  <div class="card-body">
+    {% if customerB2bGrid %}
+      {{ include('@PrestaShop/Admin/Common/Grid/grid.html.twig', { grid: customerB2bGrid }) }}
+    {% else %}
+      <div class="text-muted">
+        (Grid will be displayed here)
+      </div>
+    {% endif %}
+  </div>
+</div>

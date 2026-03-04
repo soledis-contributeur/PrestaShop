@@ -1,0 +1,35 @@
+{#
+ # For the full copyright and license information, please view the
+ # docs/licenses/LICENSE.txt file that was distributed with this source code.
+ #}
+
+{% set a = businessEntity.getDeliveryAddress %}
+
+<div class="card">
+  <h3 class="card-header">
+    {{ 'Shipping address'|trans({}, 'Admin.Orderscustomers.Feature') }}
+  </h3>
+
+  <div class="card-body">
+    {% if a %}
+      <div class="mb-2">
+        <strong>{{ a.getAlias ?: 'Default'|trans({}, 'Admin.Global') }}</strong>
+        <span class="badge badge-info ml-2">{{ 'Default'|trans({}, 'Admin.Global') }}</span>
+      </div>
+      <div>{{ a.getCompany ?: '-' }}</div>
+      <div>{{ a.getAddress1 }}</div>
+      <div>{{ a.getAddress2 ?: '-' }}</div>
+      <div>
+        {{ a.getPostcode }} 
+        {{ a.getCity }}
+        {% if a.getCountry %}
+        , {{ a.getCountry }}
+      {% endif %}
+      </div>
+    {% else %}
+      <div class="text-muted">
+        {{ 'No shipping addresses configured'|trans({}, 'Admin.Orderscustomers.Feature') }}
+      </div>
+    {% endif %}
+  </div>
+</div>
