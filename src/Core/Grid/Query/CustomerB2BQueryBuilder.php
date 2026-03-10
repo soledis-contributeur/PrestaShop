@@ -33,8 +33,6 @@ final class CustomerB2BQueryBuilder extends AbstractDoctrineQueryBuilder
      */
     public function getSearchQueryBuilder(SearchCriteriaInterface $searchCriteria): QueryBuilder
     {
-        // $businessEntityId = $searchCriteria->getFilters()['businessEntityId'];
-
         $qb = $this->getBaseQueryBuilder($searchCriteria->getFilters());
 
         $qb->select(
@@ -89,37 +87,23 @@ final class CustomerB2BQueryBuilder extends AbstractDoctrineQueryBuilder
             ->join('bec', $this->dbPrefix . 'business_entity', 'be', 'be.id_business_entity = bec.id_business_entity')
             ->leftJoin('bec', $this->dbPrefix . 'b2b_role', 'br', 'br.id_role = bec.id_role_b2b');
 
+        if (!empty($filters['businessEntityId'])) {
+            $qb->andWhere('be.id_business_entity = :businessEntityId')
+                ->setParameter('businessEntityId', $filters['businessEntityId']);
+        }
+
+        if (!empty($filters['search'])) {
+            $qb->andWhere('c.firstname LIKE :search OR c.lastname LIKE :search OR c.email LIKE :search')
+                ->setParameter('search', '%' . $filters['search'] . '%');
+        }
+
         foreach ($filters as $filterName => $filterValue) {
             if ($filterValue === '' || $filterValue === null) {
                 continue;
             }
-            if ('businessEntityId' === $filterName) {
-                $qb->andWhere('be.id_business_entity = :businessEntityId')
-                    ->setParameter('businessEntityId', $filterValue);
-                continue;
-            }
-            if ('firstname' === $filterName) {
-                $qb->andWhere('c.firstname LIKE :firstname')
-                    ->setParameter('firstname', '%' . $filterValue . '%');
-                continue;
-            }
-
-            if ('lastname' === $filterName) {
-                $qb->andWhere('c.lastname LIKE :lastname')
-                    ->setParameter('lastname', '%' . $filterValue . '%');
-                continue;
-            }
-
-            if ('email' === $filterName) {
-                $qb->andWhere('c.email LIKE :email')
-                    ->setParameter('email', '%' . $filterValue . '%');
-                continue;
-            }
-
             if ('active' === $filterName) {
                 $qb->andWhere('c.active = :active')
                     ->setParameter('active', $filterValue);
-                continue;
             }
         }
 

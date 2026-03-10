@@ -3,18 +3,30 @@
  # docs/licenses/LICENSE.txt file that was distributed with this source code.
  #}
 
+{# src/PrestaShopBundle/Resources/views/Admin/Sell/BusinessEntity/Blocks/View/linked_customers.html.twig #}
+
 <div class="card">
-  <h3 class="card-header">
-    {{ 'Linked B2B customers'|trans({}, 'Admin.Global') }}
-  </h3>
+  <div class="card-header mb-3">
+    <div class="row">
+      <h3 class="col-md-8">{{ 'Linked B2B customers'|trans({}, 'Admin.Global') }}</h3>
+      <div class="row col-md-4 pull-right">
+        <form method="POST" action="{{ path('admin_business_entities_customer_b2b_filter', { 'businessEntityId': businessEntityId }) }}">
+          <div class="input-group">
+            <input type="text" name="search" class="form-control" placeholder="{{ 'Search customers'|trans({}, 'Admin.Global') }}" value="{{ app.request.get('search') }}">
+            <button class="btn btn-primary" type="submit">{{ 'Search'|trans({}, 'Admin.Actions') }}</button>
+          </div>
+        </form>
+
+        <a class="ml-3 btn btn-outline-secondary btn-help btn-sidebar d-none d-md-inline-block" href="{{ path('admin_customer_b2b_create') }}" class="btn btn-success ms-2">
+          <i class="material-icons">person_add</i>{{ 'Add customer'|trans({}, 'Admin.Global') }}
+        </a>
+      </div>
+    </div>
+  </div>
 
   <div class="card-body">
     {% if customerB2bGrid %}
       {{ include('@PrestaShop/Admin/Common/Grid/grid.html.twig', { grid: customerB2bGrid }) }}
-    {% else %}
-      <div class="text-muted">
-        (Grid will be displayed here)
-      </div>
     {% endif %}
   </div>
 </div>

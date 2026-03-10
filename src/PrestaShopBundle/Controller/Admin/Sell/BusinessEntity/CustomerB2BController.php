@@ -7,6 +7,7 @@
 namespace PrestaShopBundle\Controller\Admin\Sell\BusinessEntity;
 
 use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
+use PrestaShopBundle\Security\Attribute\AdminSecurity;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -19,10 +20,17 @@ class CustomerB2BController extends PrestaShopAdminController
         ]);
     }
 
+    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
     public function viewAction(int $customerB2bId): Response
     {
         return $this->render('@PrestaShop/Admin/Sell/BusinessEntity/CustomerB2B/view.html.twig', [
             'customerB2bId' => $customerB2bId,
         ]);
+    }
+
+    #[AdminSecurity("is_granted('create', request.get('_legacy_controller'))", message: 'You do not have permission to add this.', redirectRoute: 'admin_business_entities_list')]
+    public function createAction(
+    ): Response {
+        return $this->redirectToRoute('admin_business_entities_list');
     }
 }

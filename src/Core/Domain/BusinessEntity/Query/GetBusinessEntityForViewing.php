@@ -8,24 +8,14 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Query;
 
-use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityId;
-
-/**
- * Gets business entity detailed information for viewing in Back Office.
- */
 class GetBusinessEntityForViewing
 {
-    /**
-     * @var BusinessEntityId
-     */
-    private $businessEntityId;
-
-    public function __construct(int $businessEntityId)
-    {
-        $this->businessEntityId = new BusinessEntityId($businessEntityId);
+    public function __construct(
+        private readonly int $businessEntityId
+    ) {
     }
 
-    public function getBusinessEntityId(): BusinessEntityId
+    public function getBusinessEntityId(): int
     {
         return $this->businessEntityId;
     }

@@ -8,17 +8,17 @@ declare(strict_types=1);
 
 namespace PrestaShopBundle\Controller\Admin\Sell\BusinessEntity;
 
-use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\GetPendingCountCommand;
-use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\CommandHandler\GetPendingCountCommandHandler;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityBillingAddressConstraintException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\UnableToCreateBusinessEntityAddress;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Query\GetBusinessEntityForViewing;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\QueryResult\BusinessEntityForViewing;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Builder\FormBuilderInterface;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Handler\FormHandlerInterface;
 use PrestaShop\PrestaShop\Core\Grid\Filter\BusinessEntityFilters;
 use PrestaShop\PrestaShop\Core\Grid\Filter\CustomerB2BFilters;
 use PrestaShop\PrestaShop\Core\Grid\Presenter\GridPresenterInterface;
 use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
+use PrestaShopBundle\Entity\Repository\BusinessEntityRepository;
 use PrestaShopBundle\Form\Admin\Sell\BusinessEntity\BusinessEntityType;
 use PrestaShopBundle\Security\Attribute\AdminSecurity;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -31,14 +31,20 @@ use Throwable;
  */
 class BusinessEntitiesController extends PrestaShopAdminController
 {
+    private BusinessEntityRepository $businessEntityRepository;
+
+    public function __construct(BusinessEntityRepository $businessEntityRepository)
+    {
+        $this->businessEntityRepository = $businessEntityRepository;
+    }
+
     #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
     public function listAction(
         Request $request,
         #[Autowire(service: 'prestashop.core.grid.grid_factory.business_entity')]
         object $businessEntityGridFactory,
         #[Autowire(service: 'prestashop.core.grid.presenter.grid_presenter')]
-        GridPresenterInterface $gridPresenter,
-        GetPendingCountCommandHandler $getPendingCountCommandHandler
+        GridPresenterInterface $gridPresenter
     ): Response {
         /** @var array<string, mixed> $gridParams */
         $gridParams = $request->query->all(BusinessEntityFilters::GRID_ID);
@@ -55,7 +61,7 @@ class BusinessEntitiesController extends PrestaShopAdminController
 
         $businessEntityGrid = $gridPresenter->present($grid);
 
-        $pendingCount = $getPendingCountCommandHandler->handle(new GetPendingCountCommand());
+        $pendingCount = $this->businessEntityRepository->getPendingCount();
 
         $currentStatusFilter = $filters->getFilters()['status'] ?? null;
         $isPendingFilter = ($currentStatusFilter === 'pending');
@@ -92,14 +98,16 @@ class BusinessEntitiesController extends PrestaShopAdminController
         #[Autowire(service: 'prestashop.core.grid.presenter.grid_presenter')]
         GridPresenterInterface $gridPresenter
     ): Response {
+        /** @var BusinessEntityForViewing $businessEntityForViewing */
         $businessEntityForViewing = $this->dispatchQuery(
             new GetBusinessEntityForViewing($businessEntityId)
         );
 
+        $search = $request->query->get('search', '');
         $orderBy = $request->query->get('orderBy', 'id_customer_b2b');
         $sortOrder = $request->query->get('sortOrder', 'ASC');
 
-        $gridParams['filters'] = ['businessEntityId' => $businessEntityId];
+        $gridParams['filters'] = ['businessEntityId' => $businessEntityId, 'search' => $search];
         $gridParams['orderBy'] = $orderBy;
         $gridParams['sortOrder'] = $sortOrder;
 
@@ -119,6 +127,19 @@ class BusinessEntitiesController extends PrestaShopAdminController
                 'customerB2bGrid' => $customerB2BGridRendered,
             ]
         );
+    }
+
+    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
+    public function filterCustomerB2BAction(
+        Request $request,
+        int $businessEntityId,
+    ): Response {
+        $search = $request->request->get('search', '');
+
+        return $this->redirectToRoute('admin_business_entities_view', [
+            'businessEntityId' => $businessEntityId,
+            'search' => $search,
+        ]);
     }
 
     #[AdminSecurity("is_granted('create', 'AdminBusinessEntities')", message: 'You do not have permission to create this.', redirectRoute: 'admin_business_entities_list')]

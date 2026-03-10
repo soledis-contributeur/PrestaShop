@@ -11,6 +11,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use PrestaShopBundle\Entity\Enum\BusinessEntityStatus;
+use PrestaShopBundle\Entity\Repository\BusinessEntityRepository;
 
 /**
  * BusinessEntity.
@@ -27,7 +28,7 @@ use PrestaShopBundle\Entity\Enum\BusinessEntityStatus;
  *
  * @ORM\HasLifecycleCallbacks
  *
- * @ORM\Entity()
+ * @ORM\Entity(repositoryClass=BusinessEntityRepository::class)
  */
 class BusinessEntity
 {

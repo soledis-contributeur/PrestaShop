@@ -6,7 +6,7 @@ admin_business_entities_list:
 
 admin_business_entities_filter:
   path: /
-  methods: [ POST ]
+  methods: [POST]
   defaults:
     _controller: PrestaShopBundle\Controller\Admin\CommonController::searchGridAction
     _legacy_controller: AdminBusinessEntities
@@ -30,20 +30,21 @@ admin_business_entities_customer_b2b_filter:
   path: /{businessEntityId}/customers/filter
   methods: [ POST ]
   defaults:
-    _controller: PrestaShopBundle\Controller\Admin\CommonController::searchGridAction
+    _controller: PrestaShopBundle\Controller\Admin\Sell\BusinessEntity\BusinessEntitiesController::filterCustomerB2BAction
     _legacy_controller: AdminBusinessEntities
-    _legacy_link: AdminBusinessEntities:view
+    _legacy_link: AdminBusinessEntities:filterCustomerB2B
     _legacy_feature_flag: improved_b2b
-    gridDefinitionFactoryServiceId: prestashop.core.grid.definition.factory.customer_b2b
-    redirectRoute: admin_business_entities_view
-    redirectRouteParams:
-      businessEntityId: businessEntityId
   requirements:
     businessEntityId: \d+
 
 admin_business_entities_bulk_delete:
-  path: /admin/business-entities/bulk-delete
-  controller: PrestaShopBundle\Controller\Admin\Sell\BusinessEntity\BusinessEntitiesController::bulkDeleteAction
+  path: /bulk-delete
+  methods: [ POST ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\Sell\BusinessEntity\BusinessEntitiesController::bulkDeleteAction
+    _legacy_controller: AdminBusinessEntities
+    _legacy_link: AdminBusinessEntities:bulkDelete
+    _legacy_feature_flag: improved_b2b
 
 admin_business_entities_create:
   path: /new
@@ -83,3 +84,12 @@ admin_simple_customer_b2b_view:
     _legacy_feature_flag: improved_b2b
   requirements:
     customerB2bId: \d+
+
+admin_customer_b2b_create:
+  path: /new
+  methods: [ GET, POST ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\Sell\BusinessEntity\CustomerB2BController::createAction
+    _legacy_controller: AdminCustomerB2B
+    _legacy_link: AdminCustomerB2B:create
+    _legacy_feature_flag: improved_b2b

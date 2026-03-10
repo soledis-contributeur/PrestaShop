@@ -11,7 +11,6 @@ namespace PrestaShop\PrestaShop\Core\Domain\BusinessEntity\QueryResult;
 class BusinessEntityForViewing
 {
     private int $businessEntityId;
-    private string $enterpriseId;
     private ?string $externalRef;
     private string $name;
     private ?string $legalName;
@@ -27,7 +26,6 @@ class BusinessEntityForViewing
 
     public function __construct(
         int $businessEntityId,
-        string $enterpriseId,
         ?string $externalRef,
         string $name,
         ?string $legalName,
@@ -40,7 +38,6 @@ class BusinessEntityForViewing
         ?AddressForViewing $deliveryAddress
     ) {
         $this->businessEntityId = $businessEntityId;
-        $this->enterpriseId = $enterpriseId;
         $this->externalRef = $externalRef;
         $this->name = $name;
         $this->legalName = $legalName;
@@ -56,11 +53,6 @@ class BusinessEntityForViewing
     public function getBusinessEntityId(): int
     {
         return $this->businessEntityId;
-    }
-
-    public function getEnterpriseId(): string
-    {
-        return $this->enterpriseId;
     }
 
     public function getExternalRef(): ?string
