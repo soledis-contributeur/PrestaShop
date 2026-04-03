@@ -1,0 +1,47 @@
+{#
+ # For the full copyright and license information, please view the
+ # docs/licenses/LICENSE.txt file that was distributed with this source code.
+ #}
+
+{% embed '@PrestaShop/Admin/Helpers/bootstrap_popup.html.twig' with {
+  id: 'delete_business_entity_from_view_modal',
+  title: 'Delete this business entity'|trans({}, 'Admin.Actions'),
+  closable: true,
+  closeLabel: 'Cancel'|trans({}, 'Admin.Actions'),
+  actions: [{
+    type: 'button',
+    label: 'Yes, I want to delete this entity'|trans({}, 'Admin.Actions'),
+    class: 'btn btn-danger btn-lg js-submit-delete-business-entity-from-view',
+  }],
+} %}
+  {% block content %}
+    <div class="modal-body">
+      <form method="post" id="delete-business-entity-from-view-form"
+            action="{{ path('admin_business_entities_delete', {businessEntityId: businessEntityId}) }}">
+        <input type="hidden" name="_method" value="DELETE">
+        <div class="d-flex">
+          <i class="material-icons text-danger mr-2">warning</i>
+          <div>
+            <p class="mb-2">
+              {{ 'Are you sure you want to delete %name% from the list of business entities?'|trans({
+                '%name%': businessEntity.name,
+              }, 'Admin.Actions') }}
+            </p>
+
+            {% if businessEntity.linkedCustomersCount > 0 %}
+              <p class="text-warning mb-2">
+                {{ 'Warning: this business entity has %count% linked B2B customer(s). They will not be deleted by this action.'|trans({
+                  '%count%': businessEntity.linkedCustomersCount,
+                }, 'Admin.Actions') }}
+              </p>
+            {% endif %}
+
+            <p class="text-muted mb-0">
+              {{ 'This action is irreversible.'|trans({}, 'Admin.Actions') }}
+            </p>
+          </div>
+        </div>
+      </form>
+    </div>
+  {% endblock %}
+{% endembed %}

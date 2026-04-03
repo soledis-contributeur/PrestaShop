@@ -35,10 +35,31 @@
       {{ include('@PrestaShop/Admin/Sell/BusinessEntity/Blocks/View/linked_customers.html.twig') }}
     </div>
   </div>
+
+  {{ include('@PrestaShop/Admin/Sell/BusinessEntity/Blocks/delete_view_modal.html.twig') }}
 {% endblock %}
 
 {% block javascripts %}
   {{ parent() }}
 
   <script src="{{ asset('themes/new-theme/public/business_entities.bundle.js') }}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var deleteBtn = document.querySelector('.js-delete-business-entity-from-view');
+      if (!deleteBtn) {
+        return;
+      }
+      deleteBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        $('#delete_business_entity_from_view_modal').modal('show');
+      });
+      var submitBtn = document.querySelector('.js-submit-delete-business-entity-from-view');
+      if (submitBtn) {
+        submitBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          document.getElementById('delete-business-entity-from-view-form').submit();
+        });
+      }
+    });
+  </script>
 {% endblock %}

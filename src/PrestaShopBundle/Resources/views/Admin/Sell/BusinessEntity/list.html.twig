@@ -26,8 +26,11 @@
     </div>
   {% endif %}
 
-  {{ include('@PrestaShop/Admin/Common/Grid/grid_panel.html.twig', {grid: businessEntityGrid}) }}
-
+  {% embed '@PrestaShop/Admin/Common/Grid/grid_panel.html.twig' with {grid: businessEntityGrid} %}
+    {% block grid_panel_extra_content %}
+      {{ include('@PrestaShop/Admin/Sell/BusinessEntity/Blocks/delete_modal.html.twig') }}
+    {% endblock %}
+  {% endembed %}
 {% endblock %}
 
 {% block stylesheets %}

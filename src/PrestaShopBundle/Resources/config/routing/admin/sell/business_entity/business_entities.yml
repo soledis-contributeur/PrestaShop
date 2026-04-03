@@ -29,6 +29,17 @@ admin_business_entities_view:
   requirements:
     businessEntityId: \d+
 
+admin_business_entities_delete:
+  path: /delete/{businessEntityId}
+  methods: [ DELETE ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\Sell\BusinessEntity\BusinessEntitiesController::deleteAction
+    _legacy_controller: AdminBusinessEntities
+    _legacy_link: AdminBusinessEntities:delete
+    _legacy_feature_flag: improved_b2b
+  requirements:
+    businessEntityId: \d+
+
 admin_business_entities_customer_b2b_filter:
   path: /{businessEntityId}/customers/filter
   methods: [ POST ]

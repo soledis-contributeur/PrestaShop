@@ -8,7 +8,9 @@ declare(strict_types=1);
 
 namespace PrestaShopBundle\Controller\Admin\Sell\BusinessEntity;
 
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\DeleteBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityBillingAddressConstraintException;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\CannotDeleteBusinessEntityException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\UnableToCreateBusinessEntityAddress;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Query\GetBusinessEntityForViewing;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\QueryResult\BusinessEntityForViewing;
@@ -22,6 +24,7 @@ use PrestaShopBundle\Entity\Repository\BusinessEntityRepository;
 use PrestaShopBundle\Form\Admin\Sell\BusinessEntity\BusinessEntityType;
 use PrestaShopBundle\Security\Attribute\AdminSecurity;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -131,6 +134,22 @@ class BusinessEntitiesController extends PrestaShopAdminController
         );
     }
 
+    #[AdminSecurity("is_granted('delete', request.get('_legacy_controller'))", redirectRoute: 'admin_business_entities_list', message: 'You do not have permission to delete this.')]
+    public function deleteAction(int $businessEntityId): RedirectResponse
+    {
+        try {
+            $this->dispatchCommand(new DeleteBusinessEntityCommand($businessEntityId));
+        } catch (CannotDeleteBusinessEntityException $e) {
+            $this->addFlash('error', $this->getErrorMessageForException($e, $this->getErrorMessages()));
+
+            return $this->redirectToRoute('admin_business_entities_list');
+        }
+
+        $this->addFlash('success', $this->trans('Successful deletion', [], 'Admin.Notifications.Success'));
+
+        return $this->redirectToRoute('admin_business_entities_list');
+    }
+
     #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
     public function filterCustomerB2BAction(
         Request $request,
@@ -208,8 +227,58 @@ class BusinessEntitiesController extends PrestaShopAdminController
     }
 
     #[AdminSecurity("is_granted('delete', request.get('_legacy_controller'))", message: 'You do not have permission to delete this.', redirectRoute: 'admin_business_entities_list')]
-    public function bulkDeleteAction(): Response
-    {
+    public function bulkDeleteAction(
+        Request $request
+    ): Response {
+        $rawBusinessEntityIds = $request->request->all('business_entity_business_entities_bulk');
+
+        if (!is_array($rawBusinessEntityIds) || [] === $rawBusinessEntityIds) {
+            $this->addFlash('warning', $this->trans('You must select at least one business entity to delete.', [], 'Admin.Notifications.Warning'));
+
+            return $this->redirectToRoute('admin_business_entities_list');
+        }
+
+        $deletedCount = 0;
+        $errors = [];
+
+        foreach ($rawBusinessEntityIds as $rawBusinessEntityId) {
+            $businessEntityId = (int) $rawBusinessEntityId;
+
+            if ($businessEntityId <= 0) {
+                $errors[] = $this->trans('Invalid business entity id: %id%.', ['%id%' => (string) $rawBusinessEntityId], 'Admin.Notifications.Error');
+                continue;
+            }
+
+            try {
+                $this->dispatchCommand(new DeleteBusinessEntityCommand($businessEntityId));
+                ++$deletedCount;
+            } catch (CannotDeleteBusinessEntityException $e) {
+                $errors[] = $this->trans(
+                    'Unable to delete business entity #%id%: %message%',
+                    [
+                        '%id%' => (string) $businessEntityId,
+                        '%message%' => $e->getMessage(),
+                    ],
+                    'Admin.Notifications.Error'
+                );
+            }
+        }
+
+        if ($deletedCount > 0) {
+            $this->addFlash(
+                'success',
+                $this->trans(
+                    '%count% business entity(ies) deleted successfully.',
+                    ['%count%' => $deletedCount],
+                    'Admin.Notifications.Success'
+                )
+            );
+        }
+
+        if ([] !== $errors) {
+            $this->addFlash('error', implode(' ', $errors));
+        }
+
         return $this->redirectToRoute('admin_business_entities_list');
     }
 
@@ -236,12 +305,24 @@ class BusinessEntitiesController extends PrestaShopAdminController
             'icon' => 'mode_edit',
         ];
 
+        $toolbarButtons['delete'] = [
+            'href' => '#',
+            'desc' => $this->trans('Delete', [], 'Admin.Actions'),
+            'icon' => 'delete',
+            'class' => 'btn-outline-danger js-delete-business-entity-from-view',
+        ];
+
         return $toolbarButtons;
     }
 
     private function getErrorMessages(): array
     {
         return [
+            CannotDeleteBusinessEntityException::class => $this->trans(
+                'There are dependencies preventing the deletion of this business entity.',
+                [],
+                'Admin.Notifications.Error'
+            ),
             UnableToCreateBusinessEntityAddress::class => $this->trans(
                 'An error occurred while creating the business entity.',
                 [],

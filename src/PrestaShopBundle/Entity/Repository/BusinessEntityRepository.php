@@ -52,4 +52,10 @@ class BusinessEntityRepository extends EntityRepository
 
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
+
+    public function delete(BusinessEntity $businessEntity): void
+    {
+        $businessEntity->setDeleted(true);
+        $this->getEntityManager()->flush();
+    }
 }

@@ -7,13 +7,17 @@ export default {
   bulks: {
     deleteCategories: '.js-delete-categories-bulk-action',
     deleteCategoriesModal: (id: string): string => `#${id}_grid_delete_categories_modal`,
+    deleteBusinessEntities: '.js-delete-business-entities-bulk-action',
+    deleteBusinessEntityModal: (id: string): string => `#${id}_grid_delete_business_entity_modal`,
     checkedCheckbox: '.js-bulk-action-checkbox:checked',
     deleteCustomers: '.js-delete-customers-bulk-action',
     deleteCustomerModal: (id: string): string => `#${id}_grid_delete_customers_modal`,
     submitDeleteCategories: '.js-submit-delete-categories',
     submitDeleteCustomers: '.js-submit-delete-customers',
+    submitDeleteBusinessEntities: '.js-submit-delete-business-entities',
     categoriesToDelete: '#delete_categories_categories_to_delete',
     customersToDelete: '#delete_customers_customers_to_delete',
+    businessEntitiesToDelete: '#delete_business_entity_business_entities_to_delete',
     actionSelectAll: '.js-bulk-action-select-all',
     bulkActionCheckbox: '.js-bulk-action-checkbox',
     bulkActionBtn: '.js-bulk-actions-btn',
@@ -28,6 +32,7 @@ export default {
   rows: {
     categoryDeleteAction: '.js-delete-category-row-action',
     customerDeleteAction: '.js-delete-customer-row-action',
+    businessEntityDeleteAction: '.js-delete-business-entity-row-action',
     linkRowAction: '.js-link-row-action',
     linkRowActionClickableFirst:
       '.js-link-row-action[data-clickable-row=1]:first',

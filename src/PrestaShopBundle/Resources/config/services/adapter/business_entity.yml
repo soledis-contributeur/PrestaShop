@@ -3,3 +3,4 @@ services:
     autoconfigure: true
     autowire: true
   PrestaShop\PrestaShop\Adapter\BusinessEntity\CommandHandler\AddBusinessEntityHandler: ~
+  PrestaShop\PrestaShop\Adapter\BusinessEntity\CommandHandler\DeleteBusinessEntityHandler: ~

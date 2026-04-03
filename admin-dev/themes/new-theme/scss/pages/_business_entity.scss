@@ -138,12 +138,20 @@
     }
   }
 
-  .business-entity-action-delete-placeholder {
+  .business-entity-action-delete {
     color: #e63946 !important;
+
+    .material-icons {
+      color: #e63946 !important;
+    }
 
     &:hover {
       color: #b82a36 !important;
       background-color: #fff5f5;
+
+      .material-icons {
+        color: #b82a36 !important;
+      }
     }
   }
 }

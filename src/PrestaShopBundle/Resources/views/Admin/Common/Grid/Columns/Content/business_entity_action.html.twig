@@ -8,11 +8,14 @@
 {% if actions is not empty %}
   {% set inlineActions = [] %}
   {% set regularActions = [] %}
+  {% set deleteAction = null %}
 
   {% for action in actions %}
     {% if action.isApplicable(record) %}
       {% if action.options['use_inline_display'] == true %}
         {% set inlineActions = inlineActions|merge([action]) %}
+      {% elseif action.id == 'delete' %}
+        {% set deleteAction = action %}
       {% else %}
         {% set regularActions = regularActions|merge([action]) %}
       {% endif %}
@@ -36,7 +39,7 @@
       </div>
     {% endif %}
 
-    {% if regularActions is not empty %}
+    {% if regularActions is not empty or deleteAction %}
       <div class="btn-group">
         <a class="btn btn-link dropdown-toggle no-rotate business-entity-actions-toggle"
            data-toggle="dropdown"
@@ -57,11 +60,18 @@
             }) }}
           {% endfor %}
 
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item business-entity-action-delete-placeholder">
-            <i class="material-icons">delete</i>
-            {{ 'Delete'|trans({}, 'Admin.Actions') }}
-          </a>
+          {% if deleteAction %}
+            {% if regularActions is not empty %}
+              <div class="dropdown-divider"></div>
+            {% endif %}
+            {{ include('@PrestaShop/Admin/Common/Grid/Actions/Row/' ~ deleteAction.type ~ '.html.twig', {
+              grid: grid,
+              column: column,
+              attributes: {class: 'dropdown-item business-entity-action-delete', tooltip_name: false},
+              record: record,
+              action: deleteAction,
+            }) }}
+          {% endif %}
         </div>
       </div>
     {% endif %}

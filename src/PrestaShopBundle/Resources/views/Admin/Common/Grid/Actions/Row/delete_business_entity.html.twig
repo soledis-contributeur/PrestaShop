@@ -1,0 +1,32 @@
+{#
+ # For the full copyright and license information, please view the
+ # docs/licenses/LICENSE.txt file that was distributed with this source code.
+ #}
+
+{% set class = 'btn tooltip-link js-delete-business-entity-row-action' %}
+
+{% if attributes.class is defined %}
+  {% set class = class ~ ' ' ~ attributes.class %}
+{% endif %}
+
+<a class="{{ class }} grid-{{ action.name|lower }}-row-link"
+   href="#"
+   data-business-entity-id="{{ record[action.options.business_entity_id_field] }}"
+   data-business-entity-delete-url="{{ path(action.options.business_entity_delete_route, {
+     businessEntityId: record[action.options.business_entity_id_field],
+   }) }}"
+   data-business-entity-name="{{ record[action.options.business_entity_name_field] }}"
+   data-business-entity-customers-count="{{ record[action.options.business_entity_customers_count_field] }}"
+   {% if attributes.tooltip_name %}
+     data-toggle="pstooltip"
+     data-placement="top"
+     data-original-title="{{ action.name }}"
+   {% endif %}
+>
+  {% if action.icon is not empty %}
+    <i class="material-icons">{{ action.icon }}</i>
+  {% endif %}
+  {% if not attributes.tooltip_name %}
+    {{ action.name }}
+  {% endif %}
+</a>

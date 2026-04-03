@@ -1,0 +1,46 @@
+{#
+ # For the full copyright and license information, please view the
+ # docs/licenses/LICENSE.txt file that was distributed with this source code.
+ #}
+
+{% embed '@PrestaShop/Admin/Helpers/bootstrap_popup.html.twig' with {
+  id: businessEntityGrid.id ~ '_grid_delete_business_entity_modal',
+  title: 'Delete this business entity'|trans({}, 'Admin.Actions'),
+  closable: true,
+  closeLabel: 'Cancel'|trans({}, 'Admin.Actions'),
+  actions: [{
+    type: 'button',
+    label: 'Yes, I want to delete this entity'|trans({}, 'Admin.Actions'),
+    class: 'btn btn-danger btn-lg js-submit-delete-business-entities',
+  }],
+} %}
+  {% block content %}
+    <div class="modal-body">
+      <form method="post" class="js-business-entity-delete-form">
+        <input type="hidden" name="_method" value="DELETE">
+        <div id="delete_business_entity_business_entities_to_delete"
+             data-prototype='<input type="hidden" name="business_entity_business_entities_bulk[__name__]" />'>
+        </div>
+        <div class="d-flex">
+          <i class="material-icons text-danger mr-2">warning</i>
+          <div>
+            <p class="mb-2 js-delete-business-entity-message"
+               data-template="{{ 'Are you sure you want to delete %name% from the list of business entities?'|trans({}, 'Admin.Actions') }}">
+              {{ 'Are you sure you want to delete %name% from the list of business entities?'|trans({
+                '%name%': businessEntityGrid.name,
+              }, 'Admin.Actions') }}
+            </p>
+
+            <p class="text-warning mb-2 d-none js-delete-business-entity-customers-warning"
+               data-template="{{ 'Warning: this business entity has %count% linked B2B customer(s). They will not be deleted by this action.'|trans({}, 'Admin.Actions') }}">
+            </p>
+
+            <p class="text-muted mb-0">
+              {{ 'This action is irreversible.'|trans({}, 'Admin.Actions') }}
+            </p>
+          </div>
+        </div>
+      </form>
+    </div>
+  {% endblock %}
+{% endembed %}

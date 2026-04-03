@@ -2,6 +2,8 @@
  * For the full copyright and license information, please view the
  * docs/licenses/LICENSE.txt file that was distributed with this source code.
  */
+import DeleteBusinessEntityRowActionExtension from
+  '@components/grid/extension/action/row/business-entity/delete-business-entity-row-action-extension';
 
 $(() => {
   if ($('#business_entity_grid').length) {
@@ -19,6 +21,7 @@ $(() => {
     grid.addExtension(new window.prestashop.component.GridExtensions.ChoiceExtension());
     grid.addExtension(new window.prestashop.component.GridExtensions.ColumnTogglingExtension());
     grid.addExtension(new window.prestashop.component.GridExtensions.SubmitRowActionExtension());
+    grid.addExtension(new DeleteBusinessEntityRowActionExtension());
   }
 
   if ($('#simple_customer_b2b_grid').length) {

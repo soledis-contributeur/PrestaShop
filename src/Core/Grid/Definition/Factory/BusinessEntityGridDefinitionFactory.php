@@ -12,6 +12,7 @@ use PrestaShop\PrestaShop\Core\Context\ShopContext;
 use PrestaShop\PrestaShop\Core\Grid\Action\Bulk\BulkActionCollection;
 use PrestaShop\PrestaShop\Core\Grid\Action\GridActionCollection;
 use PrestaShop\PrestaShop\Core\Grid\Action\Row\RowActionCollection;
+use PrestaShop\PrestaShop\Core\Grid\Action\Row\Type\BusinessEntity\DeleteBusinessEntityRowAction;
 use PrestaShop\PrestaShop\Core\Grid\Action\Row\Type\LinkRowAction;
 use PrestaShop\PrestaShop\Core\Grid\Action\Type\SimpleGridAction;
 use PrestaShop\PrestaShop\Core\Grid\Column\ColumnCollection;
@@ -212,6 +213,17 @@ final class BusinessEntityGridDefinitionFactory extends AbstractGridDefinitionFa
                                         'accessibility_checker' => static fn (array $record): bool => 'pending' === $record['status'],
                                         'attr' => ['class' => 'business-entity-action-view-pending'],
                                     ])
+                            )
+                            ->add((new DeleteBusinessEntityRowAction('delete'))
+                                ->setName($this->trans('Delete', [], 'Admin.Actions'))
+                                ->setIcon('delete')
+                                ->setOptions([
+                                    'business_entity_delete_route' => 'admin_business_entities_delete',
+                                    'business_entity_id_field' => 'id_business_entity',
+                                    'business_entity_name_field' => 'name',
+                                    'business_entity_customers_count_field' => 'customers_count',
+                                    'accessibility_checker' => static fn (array $record): bool => 'pending' !== $record['status'],
+                                ])
                             ),
                     ])
             );
