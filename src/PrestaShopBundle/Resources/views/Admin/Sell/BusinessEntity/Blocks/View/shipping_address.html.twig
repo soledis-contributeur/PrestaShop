@@ -3,33 +3,37 @@
  # docs/licenses/LICENSE.txt file that was distributed with this source code.
  #}
 
-{% set a = businessEntity.getDeliveryAddress %}
+{% set addresses = businessEntity.getDeliveryAddresses %}
 
-<div class="card">
+<div class="card business-entity-view-addresses">
   <h3 class="card-header">
     {{ 'Shipping address'|trans({}, 'Admin.Orderscustomers.Feature') }}
   </h3>
 
   <div class="card-body">
-    {% if a %}
-      <div class="mb-2">
-        <strong>{{ a.getAlias ?: 'Default'|trans({}, 'Admin.Global') }}</strong>
-        <span class="badge badge-info ml-2">{{ 'Default'|trans({}, 'Admin.Global') }}</span>
-      </div>
-      <div>{{ a.getCompany ?: '-' }}</div>
-      <div>{{ a.getAddress1 }}</div>
-      <div>{{ a.getAddress2 ?: '-' }}</div>
-      <div>
-        {{ a.getPostcode }} 
-        {{ a.getCity }}
-        {% if a.getCountry %}
-        , {{ a.getCountry }}
-      {% endif %}
-      </div>
-    {% else %}
+    {% if addresses is empty %}
       <div class="text-muted">
         {{ 'No shipping addresses configured'|trans({}, 'Admin.Orderscustomers.Feature') }}
       </div>
+    {% else %}
+      {% for address in addresses %}
+        <div class="business-entity-view-address{% if not loop.first %} mt-3{% endif %}">
+          <div class="business-entity-view-address__title">
+            <strong>{{ address.getAlias ?: 'Default'|trans({}, 'Admin.Global') }}</strong>
+            {% if address.isDefault %}
+              <span class="badge business-entity-view-address__default-badge">
+                {{ 'Default'|trans({}, 'Admin.Global') }}
+              </span>
+            {% endif %}
+          </div>
+          {% if address.getCompany %}<div>{{ address.getCompany }}</div>{% endif %}
+          <div>{{ address.getAddress1 ?: '—' }}</div>
+          {% if address.getAddress2 %}<div>{{ address.getAddress2 }}</div>{% endif %}
+          <div>
+            {{ address.getPostcode }} {{ address.getCity }}{% if address.getCountry %}, {{ address.getCountry }}{% endif %}
+          </div>
+        </div>
+      {% endfor %}
     {% endif %}
   </div>
 </div>

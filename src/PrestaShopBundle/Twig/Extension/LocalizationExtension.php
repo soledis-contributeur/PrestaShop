@@ -8,6 +8,7 @@ namespace PrestaShopBundle\Twig\Extension;
 
 use DateTime;
 use DateTimeInterface;
+use IntlDateFormatter;
 use PrestaShop\PrestaShop\Core\Context\CurrencyContext;
 use PrestaShop\PrestaShop\Core\Context\LanguageContext;
 use PrestaShop\PrestaShop\Core\Localization\Locale\Repository;
@@ -29,6 +30,7 @@ class LocalizationExtension extends AbstractExtension
         return [
             new TwigFilter('date_format_full', [$this, 'dateFormatFull']),
             new TwigFilter('date_format_lite', [$this, 'dateFormatLite']),
+            new TwigFilter('date_format_medium', [$this, 'dateFormatMedium']),
             new TwigFilter('price_format', [$this, 'priceFormat']),
         ];
     }
@@ -89,5 +91,25 @@ class LocalizationExtension extends AbstractExtension
         }
 
         return $date->format($this->languageContext->getDateFormat());
+    }
+
+    /**
+     * @param DateTimeInterface|string $date
+     *
+     * @return string
+     */
+    public function dateFormatMedium($date): string
+    {
+        if (!$date instanceof DateTimeInterface) {
+            $date = new DateTime($date);
+        }
+
+        $formatter = new IntlDateFormatter(
+            $this->languageContext->getLocale(),
+            IntlDateFormatter::MEDIUM,
+            IntlDateFormatter::NONE
+        );
+
+        return (string) $formatter->format($date);
     }
 }

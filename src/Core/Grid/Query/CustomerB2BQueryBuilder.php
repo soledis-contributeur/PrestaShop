@@ -85,7 +85,7 @@ final class CustomerB2BQueryBuilder extends AbstractDoctrineQueryBuilder
             ->join('c', $this->dbPrefix . 'customer_b2b', 'cb', 'cb.id_customer = c.id_customer')
             ->join('cb', $this->dbPrefix . 'business_entity_customer_b2b', 'bec', 'bec.id_customer_b2b = cb.id_customer_b2b')
             ->join('bec', $this->dbPrefix . 'business_entity', 'be', 'be.id_business_entity = bec.id_business_entity')
-            ->leftJoin('bec', $this->dbPrefix . 'b2b_role', 'br', 'br.id_role = bec.id_role_b2b');
+            ->leftJoin('bec', $this->dbPrefix . 'b2b_role', 'br', 'br.id_role = bec.id_role');
 
         if (!empty($filters['businessEntityId'])) {
             $qb->andWhere('be.id_business_entity = :businessEntityId')

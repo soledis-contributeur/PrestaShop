@@ -10,71 +10,19 @@ namespace PrestaShop\PrestaShop\Core\Domain\BusinessEntity\QueryResult;
 
 class AddressForViewing
 {
-    /**
-     * @var int
-     */
-    private $addressId;
-
-    /**
-     * @var string|null
-     */
-    private $alias;
-
-    /**
-     * @var string|null
-     */
-    private $address1;
-
-    /**
-     * @var string|null
-     */
-    private $address2;
-
-    /**
-     * @var string|null
-     */
-    private $postcode;
-
-    /**
-     * @var string|null
-     */
-    private $city;
-
-    /**
-     * @var string|null
-     */
-    private $country;
-
-    /**
-     * @var string|null
-     */
-    private $company;
-
-    /**
-     * @var string|null
-     */
-    private $vat_number;
-
     public function __construct(
-        int $addressId,
-        ?string $alias,
-        ?string $address1,
-        ?string $address2,
-        ?string $postcode,
-        ?string $city,
-        ?string $country,
-        ?string $company,
-        ?string $vat_number
+        private readonly int $addressId,
+        private readonly ?string $alias,
+        private readonly ?string $address1,
+        private readonly ?string $address2,
+        private readonly ?string $postcode,
+        private readonly ?string $city,
+        private readonly ?string $country,
+        private readonly ?string $company,
+        private readonly ?string $vatNumber,
+        private readonly string $addressType,
+        private readonly bool $isDefault,
     ) {
-        $this->addressId = $addressId;
-        $this->alias = $alias;
-        $this->address1 = $address1;
-        $this->address2 = $address2;
-        $this->postcode = $postcode;
-        $this->city = $city;
-        $this->country = $country;
-        $this->company = $company;
-        $this->vat_number = $vat_number;
     }
 
     public function getAddressId(): int
@@ -119,6 +67,16 @@ class AddressForViewing
 
     public function getVatNumber(): ?string
     {
-        return $this->vat_number;
+        return $this->vatNumber;
+    }
+
+    public function getAddressType(): string
+    {
+        return $this->addressType;
+    }
+
+    public function isDefault(): bool
+    {
+        return $this->isDefault;
     }
 }

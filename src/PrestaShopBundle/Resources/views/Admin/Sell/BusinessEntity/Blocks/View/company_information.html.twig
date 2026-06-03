@@ -3,7 +3,11 @@
  # docs/licenses/LICENSE.txt file that was distributed with this source code.
  #}
 
-<div class="card" data-role="business-entity">
+{% set status = businessEntity.getStatus %}
+{% set statusLabel = status|capitalize %}
+{% set badgeClass = 'badge-' ~ status %}
+
+<div class="card business-entity-view-info" data-role="business-entity">
   <h3 class="card-header">
     {{ 'Company information'|trans({}, 'Admin.Global') }}
   </h3>
@@ -11,34 +15,37 @@
   <div class="card-body">
     <div class="row">
       <div class="col-md-6">
-        <div class="text-muted mb-3">{{ 'Name'|trans({}, 'Admin.Global') }}</div>
+        <div class="text-muted mb-2">{{ 'Name'|trans({}, 'Admin.Global') }}</div>
         <div class="mb-3"><strong>{{ businessEntity.getName }}</strong></div>
       </div>
       <div class="col-md-6">
-        <div class="text-muted mb-3">{{ 'Legal name'|trans({}, 'Admin.Global') }}</div>
-        <div class="mb-3"><strong>{{ businessEntity.getLegalName ?: '-' }}</strong></div>
+        <div class="text-muted mb-2">{{ 'Legal name'|trans({}, 'Admin.Global') }}</div>
+        <div class="mb-3"><strong>{{ businessEntity.getLegalName ?: '—' }}</strong></div>
       </div>
     </div>
+
+    {% set identifiers = businessEntity.getIdentifiers %}
+    {% if identifiers is not empty %}
+      <hr>
+      <div class="row">
+        {% for identifier in identifiers %}
+          <div class="col-md-4">
+            <div class="text-muted mb-2">{{ identifier.getLabel }}</div>
+            <div class="mb-3"><strong>{{ identifier.getValue ?: '—' }}</strong></div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     <hr>
     <div class="row">
       <div class="col-md-4">
-        <div class="text-muted mb-3">{{ 'VAT number'|trans({}, 'Admin.Global') }}</div>
-        <div class="mb-3"><strong>{{ businessEntity.getInvoiceAddress ?  businessEntity.getInvoiceAddress.getVatNumber : '-' }}</strong></div>
+        <div class="text-muted mb-2">{{ 'Status'|trans({}, 'Admin.Global') }}</div>
+        <div class="mb-0"><span class="badge {{ badgeClass }}">{{ statusLabel }}</span></div>
       </div>
       <div class="col-md-4">
-        <div class="text-muted mb-3">{{ 'SIREN/SIRET'|trans({}, 'Admin.Global') }}</div>
-        <div class="mb-3"><strong>{{ '-' }}</strong></div>
-      </div>
-      <div class="col-md-4">
-        <div class="text-muted mb-3">{{ 'DUNS'|trans({}, 'Admin.Global') }}</div>
-        <div class="mb-3"><strong>{{ '-' }}</strong></div>
-      </div>
-    </div>
-    <hr>
-    <div class="row">
-      <div class="col-md-4">
-        <div class="text-muted small">{{ 'Status'|trans({}, 'Admin.Global') }}</div>
-        <div class="mb-0">{{ businessEntity.getStatus|capitalize }}</div>
+        <div class="text-muted mb-2">{{ 'Customer group'|trans({}, 'Admin.Global') }}</div>
+        <div class="mb-0"><strong>{{ businessEntity.getCustomerGroupName ?: '—' }}</strong></div>
       </div>
     </div>
   </div>

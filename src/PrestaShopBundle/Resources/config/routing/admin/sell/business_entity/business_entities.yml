@@ -3,16 +3,19 @@ admin_business_entities_list:
   methods: [ GET ]
   defaults:
     _controller: PrestaShopBundle\Controller\Admin\Sell\BusinessEntity\BusinessEntitiesController::listAction
+    _legacy_controller: AdminBusinessEntities
+    _legacy_link: AdminBusinessEntities
+    _legacy_feature_flag: improved_b2b
 
 admin_business_entities_filter:
   path: /
-  methods: [POST]
+  methods: [ POST ]
   defaults:
     _controller: PrestaShopBundle\Controller\Admin\CommonController::searchGridAction
     _legacy_controller: AdminBusinessEntities
     _legacy_link: AdminBusinessEntities
     _legacy_feature_flag: improved_b2b
-    gridDefinitionFactoryServiceId: prestashop.core.grid.definition.factory.business_entity
+    gridDefinitionFactoryServiceId: PrestaShop\PrestaShop\Core\Grid\Definition\Factory\BusinessEntityGridDefinitionFactory
     redirectRoute: admin_business_entities_list
 
 admin_business_entities_view:
@@ -51,6 +54,9 @@ admin_business_entities_create:
   methods: [ GET, POST ]
   defaults:
     _controller: PrestaShopBundle\Controller\Admin\Sell\BusinessEntity\BusinessEntitiesController::createAction
+    _legacy_controller: AdminBusinessEntities
+    _legacy_link: AdminBusinessEntities:create
+    _legacy_feature_flag: improved_b2b
 
 admin_business_entities_edit:
   path: /{businessEntityId}/edit
@@ -62,34 +68,3 @@ admin_business_entities_edit:
     _legacy_feature_flag: improved_b2b
   requirements:
     businessEntityId: \d+
-
-admin_simple_customer_b2b_toggle_status:
-  path: /{customerB2bId}/toggle-status
-  methods: [ GET ]
-  defaults:
-    _controller: PrestaShopBundle\Controller\Admin\Sell\BusinessEntity\CustomerB2BController::toggleStatusAction
-    _legacy_controller: AdminCustomerB2B
-    _legacy_link: AdminCustomerB2B:toggleStatus
-    _legacy_feature_flag: improved_b2b
-  requirements:
-    customerB2bId: \d+
-
-admin_simple_customer_b2b_view:
-  path: /{customerB2bId}/view
-  methods: [ GET ]
-  defaults:
-    _controller: PrestaShopBundle\Controller\Admin\Sell\BusinessEntity\CustomerB2BController::viewAction
-    _legacy_controller: AdminCustomerB2B
-    _legacy_link: AdminCustomerB2B:view
-    _legacy_feature_flag: improved_b2b
-  requirements:
-    customerB2bId: \d+
-
-admin_customer_b2b_create:
-  path: /new
-  methods: [ GET, POST ]
-  defaults:
-    _controller: PrestaShopBundle\Controller\Admin\Sell\BusinessEntity\CustomerB2BController::createAction
-    _legacy_controller: AdminCustomerB2B
-    _legacy_link: AdminCustomerB2B:create
-    _legacy_feature_flag: improved_b2b

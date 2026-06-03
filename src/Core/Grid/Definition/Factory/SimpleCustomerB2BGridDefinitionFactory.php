@@ -39,7 +39,7 @@ final class SimpleCustomerB2BGridDefinitionFactory extends AbstractGridDefinitio
     {
         return (new ColumnCollection())
             ->add(
-                (new DataColumn('id'))
+                (new DataColumn('id_customer_b2b'))
                     ->setName($this->trans('ID', [], 'Admin.Global'))
                     ->setOptions(['field' => 'id_customer_b2b'])
             )
@@ -50,7 +50,7 @@ final class SimpleCustomerB2BGridDefinitionFactory extends AbstractGridDefinitio
             )
             ->add(
                 (new DataColumn('lastname'))
-                    ->setName($this->trans('Lastname', [], 'Admin.Global'))
+                    ->setName($this->trans('Name', [], 'Admin.Global'))
                     ->setOptions(['field' => 'lastname'])
             )
             ->add(
@@ -60,16 +60,16 @@ final class SimpleCustomerB2BGridDefinitionFactory extends AbstractGridDefinitio
             )
             ->add(
                 (new DataColumn('role'))
-                    ->setName($this->trans('Role label', [], 'Admin.Global'))
+                    ->setName($this->trans('Role', [], 'Admin.Global'))
                     ->setOptions(['field' => 'role'])
             )
             ->add(
                 (new ToggleColumn('active'))
-                    ->setName($this->trans('Active', [], 'Admin.Global'))
+                    ->setName($this->trans('Enabled', [], 'Admin.Global'))
                     ->setOptions([
                         'field' => 'active',
                         'primary_field' => 'id_customer',
-                        'route' => 'admin_simple_customer_b2b_toggle_status',
+                        'route' => 'admin_customer_b2b_toggle_status',
                         'route_param_name' => 'customerB2bId',
                     ])
             )
@@ -83,7 +83,7 @@ final class SimpleCustomerB2BGridDefinitionFactory extends AbstractGridDefinitio
                                     ->setName($this->trans('View details', [], 'Admin.Actions'))
                                     ->setIcon('people')
                                     ->setOptions([
-                                        'route' => 'admin_simple_customer_b2b_view',
+                                        'route' => 'admin_customer_b2b_view',
                                         'route_param_name' => 'customerB2bId',
                                         'route_param_field' => 'id_customer',
                                         'clickable_row' => true,

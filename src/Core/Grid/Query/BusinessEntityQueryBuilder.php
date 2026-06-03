@@ -10,6 +10,7 @@ namespace PrestaShop\PrestaShop\Core\Grid\Query;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
+use PrestaShop\PrestaShop\Core\Context\ShopContext;
 use PrestaShop\PrestaShop\Core\Grid\Search\SearchCriteriaInterface;
 
 /**
@@ -20,7 +21,8 @@ final class BusinessEntityQueryBuilder extends AbstractDoctrineQueryBuilder
     public function __construct(
         Connection $connection,
         $dbPrefix,
-        private readonly DoctrineSearchCriteriaApplicator $searchCriteriaApplicator
+        private readonly DoctrineSearchCriteriaApplicator $searchCriteriaApplicator,
+        private readonly ShopContext $shopContext,
     ) {
         parent::__construct($connection, $dbPrefix);
     }
@@ -32,11 +34,20 @@ final class BusinessEntityQueryBuilder extends AbstractDoctrineQueryBuilder
     {
         $qb = $this->getBaseQueryBuilder($searchCriteria->getFilters());
 
+        $vatNumberSubQuery = sprintf(
+            "COALESCE((SELECT bei.value FROM %sbusiness_entity_identifier bei WHERE bei.id_business_entity = be.id_business_entity ORDER BY bei.id_identifier ASC LIMIT 1), '-') AS vat_number",
+            $this->dbPrefix
+        );
+
         $qb->select('be.id_business_entity')
             ->addSelect('be.name')
             ->addSelect('be.legal_name')
+            ->addSelect($vatNumberSubQuery)
             ->addSelect('be.status')
+            ->addSelect('CONCAT(UPPER(SUBSTRING(be.status, 1, 1)), LOWER(SUBSTRING(be.status, 2))) AS status_label')
+            ->addSelect('s.name AS shop_name')
             ->addSelect('COUNT(DISTINCT becb.id_customer_b2b) AS customers_count')
+            ->addSelect("'customers' AS customers_badge_type")
             ->groupBy('be.id_business_entity')
         ;
 
@@ -73,7 +84,7 @@ final class BusinessEntityQueryBuilder extends AbstractDoctrineQueryBuilder
             ;
 
             foreach ($subQb->getParameters() as $name => $value) {
-                $outerQb->setParameter($name, $value);
+                $outerQb->setParameter($name, $value, $subQb->getParameterType($name));
             }
 
             return $outerQb;
@@ -94,7 +105,19 @@ final class BusinessEntityQueryBuilder extends AbstractDoctrineQueryBuilder
                 'becb',
                 'becb.id_business_entity = be.id_business_entity'
             )
+            ->leftJoin(
+                'be',
+                $this->dbPrefix . 'shop',
+                's',
+                's.id_shop = be.id_shop'
+            )
+            ->where('be.deleted = 0')
         ;
+
+        if (!$this->shopContext->isAllShopContext()) {
+            $qb->andWhere('be.id_shop IN (:beShopIds)')
+                ->setParameter('beShopIds', $this->shopContext->getAssociatedShopIds(), Connection::PARAM_INT_ARRAY);
+        }
 
         foreach ($filters as $filterName => $filterValue) {
             if ($filterValue === '' || $filterValue === null) {
@@ -115,6 +138,16 @@ final class BusinessEntityQueryBuilder extends AbstractDoctrineQueryBuilder
 
             if ('legal_name' === $filterName) {
                 $qb->andWhere("be.legal_name LIKE :$filterName");
+                $qb->setParameter($filterName, '%' . $filterValue . '%');
+                continue;
+            }
+
+            if ('vat_number' === $filterName) {
+                $qb->andWhere(sprintf(
+                    'EXISTS (SELECT 1 FROM %sbusiness_entity_identifier bei WHERE bei.id_business_entity = be.id_business_entity AND bei.value LIKE :%s)',
+                    $this->dbPrefix,
+                    $filterName
+                ));
                 $qb->setParameter($filterName, '%' . $filterValue . '%');
                 continue;
             }

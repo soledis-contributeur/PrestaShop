@@ -1,0 +1,451 @@
+/**
+ * For the full copyright and license information, please view the
+ * docs/licenses/LICENSE.txt file that was distributed with this source code.
+ */
+
+/* The rules below intentionally use !important to override Bootstrap utility classes (.rounded, .text-right and text-color utilities) that the generic grid column templates output with !important and that cannot be overridden by specificity alone. */
+/* stylelint-disable declaration-no-important */
+#business_entity_grid {
+  .badge.badge-active,
+  .badge.badge-pending,
+  .badge.badge-rejected,
+  .badge.badge-inactive {
+    display: inline-block;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #000;
+    border-radius: 50rem !important;
+  }
+
+  .badge.badge-active {
+    background-color: #bde9c9;
+  }
+
+  .badge.badge-pending {
+    background-color: #d1dcfc;
+  }
+
+  .badge.badge-rejected {
+    background-color: #fdbfbf;
+  }
+
+  .badge.badge-inactive {
+    background-color: #eee;
+  }
+
+  .badge.badge-customers {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px 2px 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #000;
+    background-color: #eee;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+
+    &::after {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      margin-left: 6px;
+      font-family: serif;
+      font-size: 10px;
+      font-style: italic;
+      font-weight: 700;
+      color: #fff;
+      content: "i";
+      background-color: #000;
+      border-radius: 50%;
+    }
+  }
+
+  th.column-actions {
+    text-align: center;
+  }
+
+  .business-entity-action-approve,
+  .business-entity-action-reject,
+  .business-entity-action-view-pending {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0 2px;
+    text-decoration: none;
+    border-radius: 50%;
+
+    .material-icons {
+      font-size: 18px;
+    }
+  }
+
+  .business-entity-action-approve {
+    background-color: #1fab55;
+
+    &,
+    .material-icons {
+      color: #fff !important;
+    }
+
+    &:hover {
+      background-color: #178944;
+    }
+  }
+
+  .business-entity-action-reject {
+    background-color: #fff;
+    border: 1px solid #ddd;
+
+    &,
+    .material-icons {
+      color: #e63946 !important;
+    }
+
+    &:hover {
+      background-color: #fff5f5;
+    }
+  }
+
+  .business-entity-action-view-pending {
+    background-color: transparent;
+
+    &,
+    .material-icons {
+      color: #000 !important;
+    }
+
+    &:hover {
+      background-color: #eee;
+    }
+  }
+
+  .business-entity-actions-toggle {
+    padding: 0;
+    color: #000;
+
+    &::after {
+      display: none;
+    }
+
+    .material-icons {
+      font-size: 22px;
+    }
+  }
+
+  .business-entity-action-delete-placeholder {
+    color: #e63946 !important;
+
+    &:hover {
+      color: #b82a36 !important;
+      background-color: #fff5f5;
+    }
+  }
+}
+
+.business-entity-view-header {
+  margin-bottom: 1rem;
+
+  &__main {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  &__titles {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__title {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  &__name {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  &__legal-name {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+}
+
+.business-entity-view-avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #000;
+  letter-spacing: 0.05em;
+  background-color: transparent;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+}
+
+.business-entity-view-separator {
+  margin: 0 0 1.5rem;
+  border-top: 1px solid #e5e5e5;
+}
+
+.business-entity-view-header,
+.business-entity-view-info {
+  .badge.badge-active,
+  .badge.badge-pending,
+  .badge.badge-rejected,
+  .badge.badge-inactive {
+    display: inline-block;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #000;
+    border-radius: 50rem !important;
+  }
+
+  .badge.badge-active {
+    background-color: #bde9c9;
+  }
+
+  .badge.badge-pending {
+    background-color: #d1dcfc;
+  }
+
+  .badge.badge-rejected {
+    background-color: #fdbfbf;
+  }
+
+  .badge.badge-inactive {
+    background-color: #eee;
+  }
+}
+
+.business-entity-view-summary {
+  &__block {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    border-radius: 8px;
+
+    .material-icons {
+      font-size: 1.75rem;
+    }
+  }
+
+  &__block--customers {
+    background-color: #f8f0f7;
+
+    .material-icons {
+      color: #7b4fac;
+    }
+  }
+
+  &__block--addresses {
+    background-color: #e4f4f8;
+
+    .material-icons {
+      color: #5c92aa;
+    }
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+
+  &__value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #000;
+  }
+
+  &__label {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #555;
+  }
+
+  &__meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+
+  &__meta-line {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    .material-icons {
+      font-size: 1rem;
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.business-entity-linked-customers {
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__title {
+    margin: 0;
+    font-weight: 700;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  &__search-form {
+    .input-group {
+      width: 280px;
+
+      .input-group-text {
+        color: #6c757d;
+        background-color: #fff;
+        border-right: 0;
+
+        .material-icons {
+          font-size: 18px;
+        }
+      }
+
+      .form-control {
+        padding-left: 0;
+        border-left: 0;
+        box-shadow: none;
+
+        &:focus {
+          border-color: #ced4da;
+          box-shadow: none;
+        }
+      }
+    }
+  }
+
+  &__search-submit {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  &__add-btn {
+    display: inline-flex;
+    gap: 0.25rem;
+    align-items: center;
+  }
+
+  #simple_customer_b2b_grid {
+    thead.thead-default th[data-column-id="active"] .ps-sortable-column {
+      justify-content: center;
+    }
+
+    thead.thead-default th[data-column-id="actions"] .grid-actions-header-text {
+      text-align: center;
+    }
+
+    td.column-active {
+      text-align: center;
+    }
+
+    td.column-actions {
+      text-align: center;
+
+      .btn-group-action {
+        text-align: center !important;
+      }
+
+      a,
+      .material-icons {
+        color: #e63946 !important;
+      }
+    }
+  }
+}
+
+.business-entity-view-addresses {
+  .business-entity-view-address {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+
+  .business-entity-view-address__title {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    strong {
+      font-weight: 700;
+    }
+  }
+
+  .business-entity-view-address__default-badge {
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #2b5566;
+    background-color: #e4f4f8;
+    border: 1px solid #5c92aa;
+    border-radius: 10px;
+  }
+}
+
+.business-entity-pending-banner {
+  &__content {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__title {
+    font-size: 1.125rem;
+  }
+
+  &__btn {
+    color: #174eef;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 1px solid #174eef;
+
+    &:hover {
+      color: #fff;
+      background-color: #174eef;
+    }
+  }
+}

@@ -3,3 +3,37 @@ admin_customer_b2b_list:
   methods: [ GET ]
   defaults:
     _controller: PrestaShopBundle\Controller\Admin\Sell\CustomerB2b\CustomerB2bController::listAction
+    _legacy_controller: AdminCustomersB2B
+    _legacy_link: AdminCustomersB2B
+    _legacy_feature_flag: improved_b2b
+
+admin_customer_b2b_create:
+  path: /new
+  methods: [ GET, POST ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\Sell\CustomerB2b\CustomerB2bController::createAction
+    _legacy_controller: AdminCustomersB2B
+    _legacy_link: AdminCustomersB2B:create
+    _legacy_feature_flag: improved_b2b
+
+admin_customer_b2b_view:
+  path: /{customerB2bId}/view
+  methods: [ GET ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\Sell\CustomerB2b\CustomerB2bController::viewAction
+    _legacy_controller: AdminCustomersB2B
+    _legacy_link: AdminCustomersB2B:view
+    _legacy_feature_flag: improved_b2b
+  requirements:
+    customerB2bId: \d+
+
+admin_customer_b2b_toggle_status:
+  path: /{customerB2bId}/toggle-status
+  methods: [ GET ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\Sell\CustomerB2b\CustomerB2bController::toggleStatusAction
+    _legacy_controller: AdminCustomersB2B
+    _legacy_link: AdminCustomersB2B:toggleStatus
+    _legacy_feature_flag: improved_b2b
+  requirements:
+    customerB2bId: \d+

@@ -7,24 +7,26 @@
 {% block content %}
 
   {% if pendingCount > 0 %}
-    <div class="alert alert-info" role="alert">
-      <p class="mb-1">
-        <strong>{{ 'Pending validation(s).'|trans({}, 'Admin.Catalog.Help') }}</strong>
-      </p>
-      <p class="mb-1">
-        {{ 'There are %pendingCount% business entities waiting for validation.'|trans({'%pendingCount%': pendingCount }, 'Admin.Catalog.Help')|raw }}
-      </p>
-      {% if not isPendingFilter and pendingCount > 0 %}
-      <p class="alert-text">
-        <a class="" href="{{ pendingUrl }}">
-          {{ 'Review pending'|trans({}, 'Admin.Orderscustomers.Feature') }}
-        </a>
-      </p>
-      {% endif %}
+    <div class="alert alert-info business-entity-pending-banner" role="alert">
+      <div class="business-entity-pending-banner__content">
+        <div class="business-entity-pending-banner__text">
+          <p class="business-entity-pending-banner__title mb-1">
+            <strong>{{ 'Pending validation(s).'|trans({}, 'Admin.Catalog.Help') }}</strong>
+          </p>
+          <p class="mb-0">
+            {{ 'There are %pendingCount% business entities waiting for validation.'|trans({'%pendingCount%': pendingCount}, 'Admin.Catalog.Help')|raw }}
+          </p>
+        </div>
+        {% if not isPendingFilter %}
+          <a class="btn business-entity-pending-banner__btn" href="{{ pendingUrl }}">
+            {{ 'Review pending'|trans({}, 'Admin.Orderscustomers.Feature') }}
+          </a>
+        {% endif %}
+      </div>
     </div>
   {% endif %}
 
-  {% include '@PrestaShop/Admin/Common/Grid/grid_panel.html.twig' with {'grid': businessEntityGrid} %}
+  {{ include('@PrestaShop/Admin/Common/Grid/grid_panel.html.twig', {grid: businessEntityGrid}) }}
 
 {% endblock %}
 
@@ -34,7 +36,7 @@
 
 {% block javascripts %}
   {{ parent() }}
-  
+
   <script src="{{ asset('themes/new-theme/public/business_entities.bundle.js') }}"></script>
   <script src="{{ asset('themes/default/js/bundle/pagination.js') }}"></script>
 {% endblock %}

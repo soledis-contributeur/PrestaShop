@@ -10,44 +10,27 @@ namespace PrestaShop\PrestaShop\Core\Domain\BusinessEntity\QueryResult;
 
 class BusinessEntityForViewing
 {
-    private int $businessEntityId;
-    private ?string $externalRef;
-    private string $name;
-    private ?string $legalName;
-    private bool $deliveryAuthorized;
-    private string $status;
-    private string $createdAt;
-    private string $updatedAt;
-
-    private int $linkedCustomersCount;
-
-    private ?AddressForViewing $invoiceAddress;
-    private ?AddressForViewing $deliveryAddress;
-
+    /**
+     * @param AddressForViewing[] $invoiceAddresses
+     * @param AddressForViewing[] $deliveryAddresses
+     * @param IdentifierForViewing[] $identifiers
+     */
     public function __construct(
-        int $businessEntityId,
-        ?string $externalRef,
-        string $name,
-        ?string $legalName,
-        bool $deliveryAuthorized,
-        string $status,
-        string $createdAt,
-        string $updatedAt,
-        int $linkedCustomersCount,
-        ?AddressForViewing $invoiceAddress,
-        ?AddressForViewing $deliveryAddress
+        private readonly int $businessEntityId,
+        private readonly ?string $externalRef,
+        private readonly string $name,
+        private readonly ?string $legalName,
+        private readonly bool $deliveryAuthorized,
+        private readonly string $status,
+        private readonly string $createdAt,
+        private readonly string $updatedAt,
+        private readonly int $linkedCustomersCount,
+        private readonly int $customerGroupId,
+        private readonly string $customerGroupName,
+        private readonly array $invoiceAddresses,
+        private readonly array $deliveryAddresses,
+        private readonly array $identifiers,
     ) {
-        $this->businessEntityId = $businessEntityId;
-        $this->externalRef = $externalRef;
-        $this->name = $name;
-        $this->legalName = $legalName;
-        $this->deliveryAuthorized = $deliveryAuthorized;
-        $this->status = $status;
-        $this->createdAt = $createdAt;
-        $this->updatedAt = $updatedAt;
-        $this->linkedCustomersCount = $linkedCustomersCount;
-        $this->invoiceAddress = $invoiceAddress;
-        $this->deliveryAddress = $deliveryAddress;
     }
 
     public function getBusinessEntityId(): int
@@ -95,13 +78,67 @@ class BusinessEntityForViewing
         return $this->linkedCustomersCount;
     }
 
-    public function getInvoiceAddress(): ?AddressForViewing
+    public function getCustomerGroupId(): int
     {
-        return $this->invoiceAddress;
+        return $this->customerGroupId;
     }
 
-    public function getDeliveryAddress(): ?AddressForViewing
+    public function getCustomerGroupName(): string
     {
-        return $this->deliveryAddress;
+        return $this->customerGroupName;
+    }
+
+    /**
+     * @return AddressForViewing[]
+     */
+    public function getInvoiceAddresses(): array
+    {
+        return $this->invoiceAddresses;
+    }
+
+    /**
+     * @return AddressForViewing[]
+     */
+    public function getDeliveryAddresses(): array
+    {
+        return $this->deliveryAddresses;
+    }
+
+    /**
+     * @return IdentifierForViewing[]
+     */
+    public function getIdentifiers(): array
+    {
+        return $this->identifiers;
+    }
+
+    public function getAddressesCount(): int
+    {
+        $unique = [];
+        foreach ($this->invoiceAddresses as $address) {
+            $unique[$address->getAddressId()] = true;
+        }
+        foreach ($this->deliveryAddresses as $address) {
+            $unique[$address->getAddressId()] = true;
+        }
+
+        return count($unique);
+    }
+
+    public function getInitials(): string
+    {
+        $initials = '';
+        $words = preg_split('/\s+/u', trim($this->name)) ?: [];
+        foreach ($words as $word) {
+            if ('' === $word) {
+                continue;
+            }
+            $initials .= mb_strtoupper(mb_substr($word, 0, 1));
+            if (mb_strlen($initials) >= 2) {
+                break;
+            }
+        }
+
+        return $initials;
     }
 }

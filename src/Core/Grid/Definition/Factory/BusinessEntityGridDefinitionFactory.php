@@ -8,13 +8,14 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Core\Grid\Definition\Factory;
 
+use PrestaShop\PrestaShop\Core\Context\ShopContext;
 use PrestaShop\PrestaShop\Core\Grid\Action\Bulk\BulkActionCollection;
 use PrestaShop\PrestaShop\Core\Grid\Action\GridActionCollection;
 use PrestaShop\PrestaShop\Core\Grid\Action\Row\RowActionCollection;
 use PrestaShop\PrestaShop\Core\Grid\Action\Row\Type\LinkRowAction;
 use PrestaShop\PrestaShop\Core\Grid\Action\Type\SimpleGridAction;
 use PrestaShop\PrestaShop\Core\Grid\Column\ColumnCollection;
-use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\ActionColumn;
+use PrestaShop\PrestaShop\Core\Grid\Column\Type\BusinessEntity\BusinessEntityActionColumn;
 use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\BadgeColumn;
 use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\BulkActionColumn;
 use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\DataColumn;
@@ -36,8 +37,10 @@ final class BusinessEntityGridDefinitionFactory extends AbstractGridDefinitionFa
 
     public const GRID_ID = 'business_entity';
 
-    public function __construct(HookDispatcherInterface $hookDispatcher)
-    {
+    public function __construct(
+        HookDispatcherInterface $hookDispatcher,
+        private readonly ShopContext $shopContext,
+    ) {
         parent::__construct($hookDispatcher);
     }
 
@@ -53,7 +56,7 @@ final class BusinessEntityGridDefinitionFactory extends AbstractGridDefinitionFa
 
     protected function getColumns()
     {
-        return (new ColumnCollection())
+        $columns = (new ColumnCollection())
             ->add(
                 (new BulkActionColumn('business_entities_bulk'))
                     ->setOptions([
@@ -70,7 +73,7 @@ final class BusinessEntityGridDefinitionFactory extends AbstractGridDefinitionFa
             )
             ->add(
                 (new DataColumn('name'))
-                    ->setName($this->trans('Name', [], 'Admin.Global'))
+                    ->setName($this->trans('Company', [], 'Admin.Global'))
                     ->setOptions([
                         'field' => 'name',
                     ])
@@ -83,42 +86,49 @@ final class BusinessEntityGridDefinitionFactory extends AbstractGridDefinitionFa
                     ])
             )
             ->add(
+                (new DataColumn('vat_number'))
+                    ->setName($this->trans('VAT number', [], 'Admin.Global'))
+                    ->setOptions([
+                        'field' => 'vat_number',
+                    ])
+            );
+
+        if ($this->shopContext->isMultiShopUsed()) {
+            $columns->add(
+                (new DataColumn('shop_name'))
+                    ->setName($this->trans('Shop', [], 'Admin.Global'))
+                    ->setOptions([
+                        'field' => 'shop_name',
+                    ])
+            );
+        }
+
+        return $columns
+            ->add(
                 (new BadgeColumn('customers_count'))
-                    ->setName($this->trans('Customers B2B', [], 'Admin.Global'))
+                    ->setName($this->trans('Customers', [], 'Admin.Global'))
                     ->setOptions([
                         'field' => 'customers_count',
                         'alignment' => 'left',
-                        'badge_type' => 'info',
-                        'badge_type_field' => 'customers_count',
-                        'color_field' => 'customers_count',
+                        'badge_type' => '',
+                        'badge_type_field' => 'customers_badge_type',
                     ])
             )
             ->add(
                 (new BadgeColumn('status'))
                     ->setName($this->trans('Status', [], 'Admin.Global'))
                     ->setOptions([
-                        'field' => 'status',
+                        'field' => 'status_label',
                         'alignment' => 'left',
                         'badge_type' => '',
                         'badge_type_field' => 'status',
-                        'color_field' => 'status',
                     ])
             )
             ->add(
-                (new ActionColumn('actions'))
+                (new BusinessEntityActionColumn('actions'))
                     ->setName($this->trans('Actions', [], 'Admin.Global'))
                     ->setOptions([
                         'actions' => (new RowActionCollection())
-                            ->add(
-                                (new LinkRowAction('edit'))
-                                    ->setName($this->trans('Edit', [], 'Admin.Actions'))
-                                    ->setIcon('edit')
-                                    ->setOptions([
-                                        'route' => 'admin_business_entities_view',
-                                        'route_param_name' => 'businessEntityId',
-                                        'route_param_field' => 'id_business_entity',
-                                    ])
-                            )
                             ->add(
                                 (new LinkRowAction('view'))
                                     ->setName($this->trans('View details', [], 'Admin.Actions'))
@@ -128,6 +138,79 @@ final class BusinessEntityGridDefinitionFactory extends AbstractGridDefinitionFa
                                         'route_param_name' => 'businessEntityId',
                                         'route_param_field' => 'id_business_entity',
                                         'clickable_row' => true,
+                                        'accessibility_checker' => static fn (array $record): bool => 'pending' !== $record['status'],
+                                    ])
+                            )
+                            ->add(
+                                (new LinkRowAction('add_b2b_customer'))
+                                    ->setName($this->trans('Add B2B customer', [], 'Admin.Actions'))
+                                    ->setIcon('person_add')
+                                    ->setOptions([
+                                        'route' => 'admin_business_entities_list',
+                                        'route_param_name' => 'businessEntityId',
+                                        'route_param_field' => 'id_business_entity',
+                                        'accessibility_checker' => static fn (array $record): bool => 'pending' !== $record['status'],
+                                    ])
+                            )
+                            ->add(
+                                (new LinkRowAction('edit'))
+                                    ->setName($this->trans('Edit', [], 'Admin.Actions'))
+                                    ->setIcon('edit')
+                                    ->setOptions([
+                                        'route' => 'admin_business_entities_edit',
+                                        'route_param_name' => 'businessEntityId',
+                                        'route_param_field' => 'id_business_entity',
+                                        'accessibility_checker' => static fn (array $record): bool => 'pending' !== $record['status'],
+                                    ])
+                            )
+                            ->add(
+                                (new LinkRowAction('edit_status'))
+                                    ->setName($this->trans('Edit status', [], 'Admin.Actions'))
+                                    ->setIcon('autorenew')
+                                    ->setOptions([
+                                        'route' => 'admin_business_entities_list',
+                                        'route_param_name' => 'businessEntityId',
+                                        'route_param_field' => 'id_business_entity',
+                                        'accessibility_checker' => static fn (array $record): bool => 'pending' !== $record['status'],
+                                    ])
+                            )
+                            ->add(
+                                (new LinkRowAction('approve_pending'))
+                                    ->setName($this->trans('Approve', [], 'Admin.Actions'))
+                                    ->setIcon('check')
+                                    ->setOptions([
+                                        'route' => 'admin_business_entities_list',
+                                        'route_param_name' => 'businessEntityId',
+                                        'route_param_field' => 'id_business_entity',
+                                        'use_inline_display' => true,
+                                        'accessibility_checker' => static fn (array $record): bool => 'pending' === $record['status'],
+                                        'attr' => ['class' => 'business-entity-action-approve'],
+                                    ])
+                            )
+                            ->add(
+                                (new LinkRowAction('reject_pending'))
+                                    ->setName($this->trans('Reject', [], 'Admin.Actions'))
+                                    ->setIcon('close')
+                                    ->setOptions([
+                                        'route' => 'admin_business_entities_list',
+                                        'route_param_name' => 'businessEntityId',
+                                        'route_param_field' => 'id_business_entity',
+                                        'use_inline_display' => true,
+                                        'accessibility_checker' => static fn (array $record): bool => 'pending' === $record['status'],
+                                        'attr' => ['class' => 'business-entity-action-reject'],
+                                    ])
+                            )
+                            ->add(
+                                (new LinkRowAction('view_pending'))
+                                    ->setName($this->trans('View details', [], 'Admin.Actions'))
+                                    ->setIcon('visibility')
+                                    ->setOptions([
+                                        'route' => 'admin_business_entities_view',
+                                        'route_param_name' => 'businessEntityId',
+                                        'route_param_field' => 'id_business_entity',
+                                        'use_inline_display' => true,
+                                        'accessibility_checker' => static fn (array $record): bool => 'pending' === $record['status'],
+                                        'attr' => ['class' => 'business-entity-action-view-pending'],
                                     ])
                             ),
                     ])
@@ -166,6 +249,16 @@ final class BusinessEntityGridDefinitionFactory extends AbstractGridDefinitionFa
                         'required' => false,
                     ])
                     ->setAssociatedColumn('legal_name')
+            )
+            ->add(
+                (new Filter('vat_number', TextType::class))
+                    ->setTypeOptions([
+                        'attr' => [
+                            'placeholder' => $this->trans('Search VAT number', [], 'Admin.Actions'),
+                        ],
+                        'required' => false,
+                    ])
+                    ->setAssociatedColumn('vat_number')
             )
             ->add(
                 (new Filter('customers_count', NumberType::class))

@@ -61,7 +61,7 @@ class BusinessEntitiesController extends PrestaShopAdminController
 
         $businessEntityGrid = $gridPresenter->present($grid);
 
-        $pendingCount = $this->businessEntityRepository->getPendingCount();
+        $pendingCount = $this->businessEntityRepository->getPendingCount($this->getShopContext());
 
         $currentStatusFilter = $filters->getFilters()['status'] ?? null;
         $isPendingFilter = ($currentStatusFilter === 'pending');
@@ -103,13 +103,15 @@ class BusinessEntitiesController extends PrestaShopAdminController
             new GetBusinessEntityForViewing($businessEntityId)
         );
 
-        $search = $request->query->get('search', '');
-        $orderBy = $request->query->get('orderBy', 'id_customer_b2b');
-        $sortOrder = $request->query->get('sortOrder', 'ASC');
+        $search = (string) $request->query->get('search', '');
+        $orderBy = (string) $request->query->get('orderBy', 'id_customer_b2b');
+        $sortOrder = (string) $request->query->get('sortOrder', 'ASC');
 
-        $gridParams['filters'] = ['businessEntityId' => $businessEntityId, 'search' => $search];
-        $gridParams['orderBy'] = $orderBy;
-        $gridParams['sortOrder'] = $sortOrder;
+        $gridParams = [
+            'filters' => ['businessEntityId' => $businessEntityId, 'search' => $search],
+            'orderBy' => $orderBy,
+            'sortOrder' => $sortOrder,
+        ];
 
         $filters = new CustomerB2BFilters($gridParams);
 
@@ -134,7 +136,7 @@ class BusinessEntitiesController extends PrestaShopAdminController
         Request $request,
         int $businessEntityId,
     ): Response {
-        $search = $request->request->get('search', '');
+        $search = (string) $request->request->get('search', '');
 
         return $this->redirectToRoute('admin_business_entities_view', [
             'businessEntityId' => $businessEntityId,
@@ -142,7 +144,7 @@ class BusinessEntitiesController extends PrestaShopAdminController
         ]);
     }
 
-    #[AdminSecurity("is_granted('create', 'AdminBusinessEntities')", message: 'You do not have permission to create this.', redirectRoute: 'admin_business_entities_list')]
+    #[AdminSecurity("is_granted('create', request.get('_legacy_controller'))", message: 'You do not have permission to create this.', redirectRoute: 'admin_business_entities_list')]
     public function createAction(
         Request $request,
         #[Autowire(service: 'prestashop.core.form.identifiable_object.builder.business_entity_form_builder')]
@@ -206,13 +208,8 @@ class BusinessEntitiesController extends PrestaShopAdminController
     }
 
     #[AdminSecurity("is_granted('delete', request.get('_legacy_controller'))", message: 'You do not have permission to delete this.', redirectRoute: 'admin_business_entities_list')]
-    public function bulkDeleteAction(
-        Request $request
-    ): Response {
-        $businessEntityIds = $request->get('business_entities_bulk');
-
-        $this->addFlash('success', $this->trans('Successfully deleted selected business entities.', [], 'Admin.Notifications.Success'));
-
+    public function bulkDeleteAction(): Response
+    {
         return $this->redirectToRoute('admin_business_entities_list');
     }
 
@@ -235,7 +232,7 @@ class BusinessEntitiesController extends PrestaShopAdminController
 
         $toolbarButtons['edit'] = [
             'href' => $this->generateUrl('admin_business_entities_edit', ['businessEntityId' => $businessEntityId]),
-            'desc' => $this->trans('Edit', [], 'Admin.Orderscustomers.Feature'),
+            'desc' => $this->trans('Edit', [], 'Admin.Actions'),
             'icon' => 'mode_edit',
         ];
 

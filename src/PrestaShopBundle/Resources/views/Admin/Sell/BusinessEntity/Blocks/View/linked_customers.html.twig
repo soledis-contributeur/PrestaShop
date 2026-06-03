@@ -3,30 +3,44 @@
  # docs/licenses/LICENSE.txt file that was distributed with this source code.
  #}
 
-{# src/PrestaShopBundle/Resources/views/Admin/Sell/BusinessEntity/Blocks/View/linked_customers.html.twig #}
+<div class="card business-entity-linked-customers">
+  <div class="card-header business-entity-linked-customers__header">
+    <h3 class="business-entity-linked-customers__title">
+      {{ 'Linked B2B customers'|trans({}, 'Admin.Global') }}
+    </h3>
 
-<div class="card">
-  <div class="card-header mb-3">
-    <div class="row">
-      <h3 class="col-md-8">{{ 'Linked B2B customers'|trans({}, 'Admin.Global') }}</h3>
-      <div class="row col-md-4 pull-right">
-        <form method="POST" action="{{ path('admin_business_entities_customer_b2b_filter', { 'businessEntityId': businessEntityId }) }}">
-          <div class="input-group">
-            <input type="text" name="search" class="form-control" placeholder="{{ 'Search customers'|trans({}, 'Admin.Global') }}" value="{{ app.request.get('search') }}">
-            <button class="btn btn-primary" type="submit">{{ 'Search'|trans({}, 'Admin.Actions') }}</button>
+    <div class="business-entity-linked-customers__actions">
+      <form method="POST" action="{{ path('admin_business_entities_customer_b2b_filter', {businessEntityId: businessEntityId}) }}" class="business-entity-linked-customers__search-form">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">
+              <i class="material-icons">search</i>
+            </span>
           </div>
-        </form>
+          <input
+            type="text"
+            name="search"
+            class="form-control"
+            placeholder="{{ 'Search customers'|trans({}, 'Admin.Global') }}"
+            value="{{ app.request.query.get('search') }}"
+          >
+          <button type="submit" class="business-entity-linked-customers__search-submit" aria-label="{{ 'Search'|trans({}, 'Admin.Actions') }}"></button>
+        </div>
+      </form>
 
-        <a class="ml-3 btn btn-outline-secondary btn-help btn-sidebar d-none d-md-inline-block" href="{{ path('admin_customer_b2b_create') }}" class="btn btn-success ms-2">
-          <i class="material-icons">person_add</i>{{ 'Add customer'|trans({}, 'Admin.Global') }}
-        </a>
-      </div>
+      <a
+        class="btn btn-outline-secondary business-entity-linked-customers__add-btn"
+        href="{{ path('admin_customer_b2b_create') }}"
+      >
+        <i class="material-icons">person_add</i>
+        {{ 'Add customer'|trans({}, 'Admin.Global') }}
+      </a>
     </div>
   </div>
 
   <div class="card-body">
     {% if customerB2bGrid %}
-      {{ include('@PrestaShop/Admin/Common/Grid/grid.html.twig', { grid: customerB2bGrid }) }}
+      {{ include('@PrestaShop/Admin/Common/Grid/grid.html.twig', {grid: customerB2bGrid}) }}
     {% endif %}
   </div>
 </div>

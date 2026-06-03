@@ -14,7 +14,7 @@ services:
       $connection: '@doctrine.dbal.default_connection'
       $dbPrefix: '%database_prefix%'
 
-  PrestaShop\PrestaShop\Core\Domain\BusinessEntity\QueryHandler\GetBusinessEntityForViewingHandler:
+  PrestaShop\PrestaShop\Adapter\BusinessEntity\QueryHandler\GetBusinessEntityForViewingHandler:
     autoconfigure: true
     arguments:
       $connection: '@doctrine.dbal.default_connection'

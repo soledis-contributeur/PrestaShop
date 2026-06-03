@@ -5,30 +5,22 @@
 
 {% set status = businessEntity.getStatus %}
 {% set statusLabel = status|capitalize %}
+{% set badgeClass = 'badge-' ~ status %}
 
-{% set badgeClass = 'badge-secondary' %}
-{% if status == 'active' %}
-  {% set badgeClass = 'badge-success' %}
-{% elseif status == 'pending' %}
-  {% set badgeClass = 'badge-warning' %}
-{% elseif status == 'rejected' %}
-  {% set badgeClass = 'badge-danger' %}
-{% elseif status == 'inactive' %}
-  {% set badgeClass = 'badge-secondary' %}
-{% endif %}
-
-<div class="row mb-3">
-  <div class="col">
-    <div class="d-flex justify-content-between align-items-start">
-      <div>
-        <h1 class="mb-0">
-          {{ businessEntity.getName }}
-          <span class="badge {{ badgeClass }} ml-2">{{ statusLabel }}</span>
-        </h1>
-        {% if businessEntity.getLegalName %}
-          <div class="text-muted">{{ businessEntity.getLegalName }}</div>
-        {% endif %}
+<div class="business-entity-view-header">
+  <div class="business-entity-view-header__main">
+    <div class="business-entity-view-avatar" aria-hidden="true">
+      {{ businessEntity.getInitials }}
+    </div>
+    <div class="business-entity-view-header__titles">
+      <div class="business-entity-view-header__title">
+        <h1 class="business-entity-view-header__name">{{ businessEntity.getName }}</h1>
+        <span class="badge {{ badgeClass }}">{{ statusLabel }}</span>
       </div>
+      {% if businessEntity.getLegalName %}
+        <div class="business-entity-view-header__legal-name">{{ businessEntity.getLegalName }}</div>
+      {% endif %}
     </div>
   </div>
 </div>
+<hr class="business-entity-view-separator">
