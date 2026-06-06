@@ -9,6 +9,7 @@ namespace PrestaShop\PrestaShop\Core\Form\IdentifiableObject\DataProvider;
 use PrestaShop\PrestaShop\Adapter\Configuration;
 use PrestaShop\PrestaShop\Core\Context\ShopContext;
 use PrestaShopBundle\Entity\Enum\BusinessEntityStatus;
+use PrestaShopBundle\Entity\Repository\BusinessEntityRepository;
 use PrestaShopBundle\Form\Admin\Sell\BusinessEntity\BusinessEntityAddressType;
 use PrestaShopBundle\Form\Admin\Sell\BusinessEntity\BusinessEntityGeneralInformationType;
 
@@ -24,6 +25,7 @@ final class BusinessEntityFormDataProvider implements FormDataProviderInterface
     public function __construct(
         Configuration $configuration,
         private readonly ShopContext $shopContext,
+        private readonly BusinessEntityRepository $businessEntityRepository,
     ) {
         $this->defaultCountryId = (int) $configuration->get('PS_COUNTRY_DEFAULT');
     }
@@ -33,7 +35,28 @@ final class BusinessEntityFormDataProvider implements FormDataProviderInterface
      */
     public function getData($id)
     {
-        return [];
+        $businessEntity = $this->businessEntityRepository->getBusinessEntityById((int) $id);
+
+        if (null === $businessEntity) {
+            return $this->getDefaultData();
+        }
+
+        return [
+            'general_information' => [
+                BusinessEntityGeneralInformationType::FIELD_NAME => $businessEntity->getName(),
+                BusinessEntityGeneralInformationType::FIELD_LEGAL_NAME => $businessEntity->getLegalName() ?? '',
+                BusinessEntityGeneralInformationType::FIELD_EXTERNAL_REF => $businessEntity->getExternalRef() ?? '',
+                BusinessEntityGeneralInformationType::FIELD_DELIVERY_AUTHORIZED => $businessEntity->isDeliveryAuthorized(),
+                BusinessEntityGeneralInformationType::FIELD_STATUS => $businessEntity->getStatus(),
+                BusinessEntityGeneralInformationType::FIELD_CUSTOMER_GROUP_ID => $businessEntity->getIdCustomerGroup(),
+            ],
+            'billing_address' => [],
+            'shipping_address' => [],
+            'billingAddressAsShippingAddress' => true,
+            'default_billing_address' => self::DEFAULT_BILLING_ADDRESS_INDEX,
+            'default_shipping_address' => self::DEFAULT_SHIPPING_ADDRESS_INDEX,
+            'shop_id' => $businessEntity->getIdShop(),
+        ];
     }
 
     /**

@@ -457,3 +457,35 @@
     }
   }
 }
+
+.business-entity-edit-address {
+  padding: 15px;
+  background-color: #f7f7f7;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+
+  &__header {
+    strong {
+      font-weight: 700;
+    }
+  }
+
+  &__default-badge {
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #2b5566;
+    background-color: #e4f4f8;
+    border: 1px solid #5c92aa;
+    border-radius: 10px;
+  }
+
+  &__delete {
+    color: #e63946;
+    cursor: pointer;
+
+    &:hover {
+      color: #b82a36;
+    }
+  }
+}

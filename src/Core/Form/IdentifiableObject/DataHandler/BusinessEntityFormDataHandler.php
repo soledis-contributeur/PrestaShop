@@ -9,6 +9,7 @@ namespace PrestaShop\PrestaShop\Core\Form\IdentifiableObject\DataHandler;
 use PrestaShop\PrestaShop\Adapter\BusinessEntity\CommandHandler\AddBusinessEntityHandler;
 use PrestaShop\PrestaShop\Core\CommandBus\CommandBusInterface;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\AddBusinessEntityCommand;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\EditBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityGeneralInformation;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityId;
 
@@ -45,11 +46,23 @@ final class BusinessEntityFormDataHandler implements FormDataHandlerInterface
         return $this->commandBus->handle($command);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function update($id, array $data)
     {
-        // TODO: US2.1.3
+        /** @var BusinessEntityGeneralInformation $generalInformation */
+        $generalInformation = $data['general_information'];
+
+        $command = new EditBusinessEntityCommand(
+            (int) $id,
+            $generalInformation->getName(),
+            $generalInformation->getLegalName(),
+            $generalInformation->getExternalRef(),
+            $generalInformation->isDeliveryAuthorized(),
+            $generalInformation->getStatus(),
+            $generalInformation->getCustomerGroupId(),
+        );
+
+        $this->commandBus->handle($command);
+
+        return new BusinessEntityId((int) $id);
     }
 }

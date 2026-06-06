@@ -222,8 +222,63 @@ class BusinessEntitiesController extends PrestaShopAdminController
     public function editAction(
         int $businessEntityId,
         Request $request,
+        #[Autowire(service: 'prestashop.core.form.identifiable_object.builder.business_entity_form_builder')]
+        FormBuilderInterface $formBuilder,
+        #[Autowire(service: 'prestashop.core.form.identifiable_object.business_entity_form_handler')]
+        FormHandlerInterface $formHandler,
+        #[Autowire(service: 'prestashop.core.grid.grid_factory.customer_b2b')]
+        object $customerB2BGridFactory,
+        #[Autowire(service: 'prestashop.core.grid.presenter.grid_presenter')]
+        GridPresenterInterface $gridPresenter,
     ): Response {
-        return $this->redirectToRoute('admin_business_entities_list');
+        $form = $formBuilder->getFormFor($businessEntityId);
+        $form->handleRequest($request);
+
+        try {
+            $result = $formHandler->handleFor($businessEntityId, $form);
+
+            if ($result->getIdentifiableObjectId()) {
+                $this->addFlash(
+                    'success',
+                    $this->trans('Business entity successfully updated.', [], 'Admin.Notifications.Success')
+                );
+
+                return $this->redirectToRoute('admin_business_entities_view', ['businessEntityId' => $businessEntityId]);
+            }
+        } catch (Throwable $e) {
+            $this->addFlash('error', $this->getErrorMessageForException($e, $this->getErrorMessages()));
+        }
+
+        /** @var BusinessEntityForViewing $businessEntityForViewing */
+        $businessEntityForViewing = $this->dispatchQuery(
+            new GetBusinessEntityForViewing($businessEntityId)
+        );
+
+        $search = (string) $request->query->get('search', '');
+        $orderBy = (string) $request->query->get('orderBy', 'id_customer_b2b');
+        $sortOrder = (string) $request->query->get('sortOrder', 'ASC');
+
+        $gridParams = [
+            'filters' => ['businessEntityId' => $businessEntityId, 'search' => $search],
+            'orderBy' => $orderBy,
+            'sortOrder' => $sortOrder,
+        ];
+
+        $filters = new CustomerB2BFilters($gridParams);
+
+        $customerB2BGrid = $customerB2BGridFactory->getGrid($filters, $orderBy, $sortOrder, $businessEntityId);
+        $customerB2BGridRendered = $gridPresenter->present($customerB2BGrid);
+
+        return $this->render(
+            '@PrestaShop/Admin/Sell/BusinessEntity/edit.html.twig',
+            [
+                'layoutTitle' => $businessEntityForViewing->getName(),
+                'businessEntityForm' => $form->createView(),
+                'businessEntity' => $businessEntityForViewing,
+                'businessEntityId' => $businessEntityId,
+                'customerB2bGrid' => $customerB2BGridRendered,
+            ]
+        );
     }
 
     #[AdminSecurity("is_granted('delete', request.get('_legacy_controller'))", message: 'You do not have permission to delete this.', redirectRoute: 'admin_business_entities_list')]
