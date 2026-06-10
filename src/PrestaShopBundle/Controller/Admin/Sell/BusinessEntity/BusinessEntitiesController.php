@@ -10,10 +10,14 @@ namespace PrestaShopBundle\Controller\Admin\Sell\BusinessEntity;
 
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\DeleteBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityBillingAddressConstraintException;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityIdentifierConstraintException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\CannotDeleteBusinessEntityException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\UnableToCreateBusinessEntityAddress;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Query\CheckDuplicateBusinessIdentifier;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Query\GetBusinessEntityForViewing;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\QueryResult\BusinessEntityForViewing;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\QueryResult\DuplicateBusinessIdentifierResult;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityIdentifierData;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Builder\FormBuilderInterface;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\Handler\FormHandlerInterface;
 use PrestaShop\PrestaShop\Core\Grid\Filter\BusinessEntityFilters;
@@ -24,6 +28,7 @@ use PrestaShopBundle\Entity\Repository\BusinessEntityRepository;
 use PrestaShopBundle\Form\Admin\Sell\BusinessEntity\BusinessEntityType;
 use PrestaShopBundle\Security\Attribute\AdminSecurity;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -160,6 +165,41 @@ class BusinessEntitiesController extends PrestaShopAdminController
         return $this->redirectToRoute('admin_business_entities_view', [
             'businessEntityId' => $businessEntityId,
             'search' => $search,
+        ]);
+    }
+
+    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
+    public function checkDuplicateIdentifierAction(Request $request): JsonResponse
+    {
+        $countryId = (int) $request->request->get('countryId', 0);
+
+        $rawBusinessEntityId = $request->request->get('businessEntityId');
+        $currentBusinessEntityId = null !== $rawBusinessEntityId && '' !== $rawBusinessEntityId
+            ? (int) $rawBusinessEntityId
+            : null;
+
+        $identifiers = [];
+        foreach ($request->request->all('identifiers') as $identifier) {
+            $businessIdentifierId = (int) ($identifier['businessIdentifierId'] ?? 0);
+            $value = (string) ($identifier['value'] ?? '');
+
+            if ($businessIdentifierId > 0 && '' !== trim($value)) {
+                $identifiers[] = new BusinessEntityIdentifierData($businessIdentifierId, $value);
+            }
+        }
+
+        if ([] === $identifiers || (0 === $countryId && null === $currentBusinessEntityId)) {
+            return new JsonResponse(['hasDuplicates' => false, 'duplicates' => []]);
+        }
+
+        /** @var DuplicateBusinessIdentifierResult $result */
+        $result = $this->dispatchQuery(
+            new CheckDuplicateBusinessIdentifier($identifiers, $countryId, $currentBusinessEntityId)
+        );
+
+        return new JsonResponse([
+            'hasDuplicates' => $result->hasDuplicates(),
+            'duplicates' => $result->getDuplicates(),
         ]);
     }
 
@@ -401,6 +441,13 @@ class BusinessEntitiesController extends PrestaShopAdminController
                 ),
                 BusinessEntityBillingAddressConstraintException::MISSING_DEFAULT_SHIPPING_ADDRESS => $this->trans(
                     'You must have one default shipping address',
+                    [],
+                    'Admin.Orderscustomers.Notification'
+                ),
+            ],
+            BusinessEntityIdentifierConstraintException::class => [
+                BusinessEntityIdentifierConstraintException::MISSING_IDENTIFIER => $this->trans(
+                    'At least one business identifier is required.',
                     [],
                     'Admin.Orderscustomers.Notification'
                 ),

@@ -1,0 +1,30 @@
+{#
+ # For the full copyright and license information, please view the
+ # docs/licenses/LICENSE.txt file that was distributed with this source code.
+ #}
+
+{% embed '@PrestaShop/Admin/Helpers/bootstrap_popup.html.twig' with {
+  id: 'business_entity_duplicate_identifier_modal',
+  title: 'Duplicate business identifier'|trans({}, 'Admin.Catalog.Feature'),
+  closable: true,
+  closeLabel: 'Cancel'|trans({}, 'Admin.Actions'),
+  actions: [{
+    type: 'button',
+    label: 'Continue'|trans({}, 'Admin.Actions'),
+    class: 'btn btn-primary btn-lg js-confirm-duplicate-identifier',
+  }],
+} %}
+  {% block content %}
+    <div class="modal-body">
+      <div class="d-flex">
+        <i class="material-icons text-warning mr-2">warning</i>
+        <div>
+          <p class="mb-2">
+            {{ 'A Business Entity with this identifier already exists. Do you want to continue?'|trans({}, 'Admin.Notifications.Warning') }}
+          </p>
+          <ul class="mb-0 text-muted js-duplicate-identifier-list"></ul>
+        </div>
+      </div>
+    </div>
+  {% endblock %}
+{% endembed %}

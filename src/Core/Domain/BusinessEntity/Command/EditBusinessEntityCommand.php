@@ -6,6 +6,7 @@
 
 namespace PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command;
 
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityIdentifierConstraintException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityId;
 use PrestaShopBundle\Entity\Enum\BusinessEntityStatus;
 
@@ -13,6 +14,9 @@ class EditBusinessEntityCommand
 {
     private readonly BusinessEntityId $businessEntityId;
 
+    /**
+     * @throws BusinessEntityIdentifierConstraintException
+     */
     public function __construct(
         int $businessEntityId,
         private readonly string $name,
@@ -21,8 +25,10 @@ class EditBusinessEntityCommand
         private readonly bool $deliveryAuthorized,
         private readonly BusinessEntityStatus $status,
         private readonly int $customerGroupId,
+        private readonly array $identifiers = [],
     ) {
         $this->businessEntityId = new BusinessEntityId($businessEntityId);
+        $this->assertAtLeastOneIdentifier();
     }
 
     public function getBusinessEntityId(): BusinessEntityId
@@ -58,5 +64,22 @@ class EditBusinessEntityCommand
     public function getCustomerGroupId(): int
     {
         return $this->customerGroupId;
+    }
+
+    public function getIdentifiers(): array
+    {
+        return $this->identifiers;
+    }
+
+    /**
+     * @throws BusinessEntityIdentifierConstraintException
+     */
+    private function assertAtLeastOneIdentifier(): void
+    {
+        if (!count($this->identifiers)) {
+            throw new BusinessEntityIdentifierConstraintException(
+                code: BusinessEntityIdentifierConstraintException::MISSING_IDENTIFIER
+            );
+        }
     }
 }

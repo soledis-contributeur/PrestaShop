@@ -10,7 +10,9 @@ namespace Tests\Unit\Core\Domain\BusinessEntity\Command;
 use PHPUnit\Framework\TestCase;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\AddBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityBillingAddressConstraintException;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityIdentifierConstraintException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityBillingAddress;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityIdentifierData;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityShippingAddress;
 use PrestaShopBundle\Entity\Enum\BusinessEntityStatus;
 
@@ -49,7 +51,9 @@ class AddBusinessEntityCommandTest extends TestCase
             self::DEFAULT_BUSINESS_ENTITY_SHOP_ID,
             self::DEFAULT_BUSINESS_ENTITY_CUSTOMER_GROUP_ID,
             true,
-            [$billingAddress]
+            [$billingAddress],
+            [],
+            [new BusinessEntityIdentifierData(1, 'FR123')]
         );
 
         $this->assertTrue(true);
@@ -78,6 +82,8 @@ class AddBusinessEntityCommandTest extends TestCase
             null
         );
 
+        $identifier = new BusinessEntityIdentifierData(1, 'FR123');
+
         $command = new AddBusinessEntityCommand(
             self::DEFAULT_BUSINESS_ENTITY_NAME,
             self::DEFAULT_BUSINESS_ENTITY_LEGAL_NAME,
@@ -88,7 +94,8 @@ class AddBusinessEntityCommandTest extends TestCase
             self::DEFAULT_BUSINESS_ENTITY_CUSTOMER_GROUP_ID,
             false,
             [$billingAddress],
-            [$shippingAddress]
+            [$shippingAddress],
+            [$identifier]
         );
 
         $this->assertSame(self::DEFAULT_BUSINESS_ENTITY_NAME, $command->getName());
@@ -101,6 +108,7 @@ class AddBusinessEntityCommandTest extends TestCase
         $this->assertFalse($command->isBillingAddressAsShippingAddress());
         $this->assertSame([$billingAddress], $command->getBillingAddresses());
         $this->assertSame([$shippingAddress], $command->getShippingAddresses());
+        $this->assertSame([$identifier], $command->getIdentifiers());
     }
 
     public function testItWorksWithSeparateAddresses(): void
@@ -137,10 +145,42 @@ class AddBusinessEntityCommandTest extends TestCase
             self::DEFAULT_BUSINESS_ENTITY_CUSTOMER_GROUP_ID,
             false,
             [$billingAddress],
-            [$shippingAddress]
+            [$shippingAddress],
+            [new BusinessEntityIdentifierData(1, 'FR123')]
         );
 
         $this->assertTrue(true);
+    }
+
+    public function testItThrowsExceptionWhenNoIdentifier(): void
+    {
+        $billingAddress = new BusinessEntityBillingAddress(
+            self::DEFAULT_BUSINESS_ENTITY_ALIAS_BILLING,
+            self::DEFAULT_BUSINESS_ENTITY_ADDRESS1,
+            null,
+            self::DEFAULT_BUSINESS_ENTITY_CITY,
+            self::DEFAULT_BUSINESS_ENTITY_POSTCODE,
+            8,
+            true,
+            null
+        );
+
+        $this->expectException(BusinessEntityIdentifierConstraintException::class);
+        $this->expectExceptionCode(BusinessEntityIdentifierConstraintException::MISSING_IDENTIFIER);
+
+        new AddBusinessEntityCommand(
+            self::DEFAULT_BUSINESS_ENTITY_NAME,
+            self::DEFAULT_BUSINESS_ENTITY_LEGAL_NAME,
+            self::DEFAULT_BUSINESS_ENTITY_EXTERNAL_REF,
+            true,
+            BusinessEntityStatus::ACTIVE,
+            self::DEFAULT_BUSINESS_ENTITY_SHOP_ID,
+            self::DEFAULT_BUSINESS_ENTITY_CUSTOMER_GROUP_ID,
+            true,
+            [$billingAddress],
+            [],
+            []
+        );
     }
 
     public function testItThrowsExceptionWhenBillingAddressIsMissing(): void

@@ -8,6 +8,7 @@ namespace PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command;
 
 use PrestaShop\PrestaShop\Adapter\BusinessEntity\CommandHandler\AddBusinessEntityHandler;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityBillingAddressConstraintException;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityIdentifierConstraintException;
 use PrestaShopBundle\Entity\Enum\BusinessEntityStatus;
 
 /**
@@ -19,6 +20,7 @@ class AddBusinessEntityCommand
 {
     /**
      * @throws BusinessEntityBillingAddressConstraintException
+     * @throws BusinessEntityIdentifierConstraintException
      */
     public function __construct(
         private readonly string $name,
@@ -31,8 +33,10 @@ class AddBusinessEntityCommand
         private readonly bool $billingAddressAsShippingAddress,
         private readonly array $billingAddresses = [],
         private readonly array $shippingAddresses = [],
+        private readonly array $identifiers = [],
     ) {
         $this->assertBusinessEntityAddressAreConsistent();
+        $this->assertAtLeastOneIdentifier();
     }
 
     public function getName(): string
@@ -78,6 +82,11 @@ class AddBusinessEntityCommand
     public function getShippingAddresses(): array
     {
         return $this->shippingAddresses;
+    }
+
+    public function getIdentifiers(): array
+    {
+        return $this->identifiers;
     }
 
     public function isBillingAddressAsShippingAddress(): bool
@@ -128,6 +137,18 @@ class AddBusinessEntityCommand
                     code: BusinessEntityBillingAddressConstraintException::MISSING_DEFAULT_SHIPPING_ADDRESS
                 );
             }
+        }
+    }
+
+    /**
+     * @throws BusinessEntityIdentifierConstraintException
+     */
+    protected function assertAtLeastOneIdentifier(): void
+    {
+        if (!count($this->identifiers)) {
+            throw new BusinessEntityIdentifierConstraintException(
+                code: BusinessEntityIdentifierConstraintException::MISSING_IDENTIFIER
+            );
         }
     }
 }

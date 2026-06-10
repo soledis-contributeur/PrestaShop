@@ -41,6 +41,7 @@ final class BusinessEntityFormDataHandler implements FormDataHandlerInterface
             $data['billingAddressAsShippingAddress'],
             $data['billing_address'],
             $data['shipping_address'],
+            $data['identifiers'],
         );
 
         return $this->commandBus->handle($command);
@@ -59,6 +60,7 @@ final class BusinessEntityFormDataHandler implements FormDataHandlerInterface
             $generalInformation->isDeliveryAuthorized(),
             $generalInformation->getStatus(),
             $generalInformation->getCustomerGroupId(),
+            $data['identifiers'],
         );
 
         $this->commandBus->handle($command);

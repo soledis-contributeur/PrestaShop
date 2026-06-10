@@ -6,11 +6,13 @@
 
 namespace PrestaShopBundle\Form\Admin\Sell\BusinessEntity;
 
+use PrestaShop\PrestaShop\Adapter\Form\ChoiceProvider\BusinessIdentifierChoiceProvider;
 use PrestaShop\PrestaShop\Core\Form\IdentifiableObject\DataProvider\BusinessEntityFormDataProvider;
 use PrestaShopBundle\Form\Admin\Type\ShopSelectorType;
 use PrestaShopBundle\Form\Admin\Type\SwitchType;
 use PrestaShopBundle\Form\Admin\Type\TranslatorAwareType;
 use PrestaShopBundle\Form\DataTransformer\BusinessEntityCommandTransformer;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -27,7 +29,8 @@ class BusinessEntityType extends TranslatorAwareType
     public function __construct(
         TranslatorInterface $translator,
         array $locales,
-        private readonly BusinessEntityCommandTransformer $commandTransformer
+        private readonly BusinessEntityCommandTransformer $commandTransformer,
+        private readonly BusinessIdentifierChoiceProvider $businessIdentifierChoiceProvider,
     ) {
         parent::__construct($translator, $locales);
     }
@@ -49,6 +52,22 @@ class BusinessEntityType extends TranslatorAwareType
 
         $builder
             ->add('general_information', BusinessEntityGeneralInformationType::class)
+            ->add('business_identifier_selector', ChoiceType::class, [
+                'label' => $this->trans('Business ID', 'Admin.Global'),
+                'choices' => $this->businessIdentifierChoiceProvider->getChoices(),
+                'placeholder' => $this->trans('Select', 'Admin.Global'),
+                'required' => false,
+                'mapped' => false,
+                'help' => $this->trans('If the business ID is not available in the list, add it manually.', 'Admin.Catalog.Feature'),
+                'attr' => ['class' => 'js-business-entity-identifier-selector'],
+            ])
+            ->add('identifiers', CollectionType::class, [
+                'entry_type' => BusinessEntityIdentifierType::class,
+                'allow_add' => true,
+                'allow_delete' => true,
+                'label' => $this->trans('Business identifiers', 'Admin.Global'),
+                'prototype' => true,
+            ])
             ->add(self::BILLING_ADDRESS_TYPE, CollectionType::class, [
                 'entry_type' => BusinessEntityAddressType::class,
                 'allow_add' => true,

@@ -10,12 +10,16 @@ namespace Tests\Unit\Core\Domain\BusinessEntity\Command;
 use PHPUnit\Framework\TestCase;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\EditBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityConstraintException;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityIdentifierConstraintException;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityIdentifierData;
 use PrestaShopBundle\Entity\Enum\BusinessEntityStatus;
 
 class EditBusinessEntityCommandTest extends TestCase
 {
     public function testItExposesAllConstructorParamsViaGetters(): void
     {
+        $identifier = new BusinessEntityIdentifierData(1, 'FR123');
+
         $command = new EditBusinessEntityCommand(
             7,
             'My Business Entity',
@@ -24,6 +28,7 @@ class EditBusinessEntityCommandTest extends TestCase
             true,
             BusinessEntityStatus::ACTIVE,
             5,
+            [$identifier],
         );
 
         $this->assertSame(7, $command->getBusinessEntityId()->getValue());
@@ -33,6 +38,7 @@ class EditBusinessEntityCommandTest extends TestCase
         $this->assertTrue($command->isDeliveryAuthorized());
         $this->assertSame(BusinessEntityStatus::ACTIVE, $command->getStatus());
         $this->assertSame(5, $command->getCustomerGroupId());
+        $this->assertSame([$identifier], $command->getIdentifiers());
     }
 
     public function testItAcceptsNullExternalRef(): void
@@ -45,6 +51,7 @@ class EditBusinessEntityCommandTest extends TestCase
             false,
             BusinessEntityStatus::PENDING,
             3,
+            [new BusinessEntityIdentifierData(1, 'FR123')],
         );
 
         $this->assertNull($command->getExternalRef());
@@ -55,6 +62,14 @@ class EditBusinessEntityCommandTest extends TestCase
     {
         $this->expectException(BusinessEntityConstraintException::class);
 
-        new EditBusinessEntityCommand(0, 'Name', 'Legal', null, false, BusinessEntityStatus::PENDING, 3);
+        new EditBusinessEntityCommand(0, 'Name', 'Legal', null, false, BusinessEntityStatus::PENDING, 3, [new BusinessEntityIdentifierData(1, 'FR123')]);
+    }
+
+    public function testItThrowsExceptionWhenNoIdentifier(): void
+    {
+        $this->expectException(BusinessEntityIdentifierConstraintException::class);
+        $this->expectExceptionCode(BusinessEntityIdentifierConstraintException::MISSING_IDENTIFIER);
+
+        new EditBusinessEntityCommand(7, 'Name', 'Legal', null, false, BusinessEntityStatus::PENDING, 3, []);
     }
 }

@@ -25,27 +25,7 @@
           <div class="col-md-6">{{ form_row(businessEntityForm.general_information.legal_name) }}</div>
         </div>
 
-        <hr>
-        <div class="row">
-          <div class="col-md-4">
-            <div class="form-group">
-              <label class="form-control-label">{{ 'VAT number'|trans({}, 'Admin.Global') }}</label>
-              <input type="text" class="form-control" placeholder="FR12345678901" disabled>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="form-group">
-              <label class="form-control-label">{{ 'SIREN / SIRET'|trans({}, 'Admin.Global') }}</label>
-              <input type="text" class="form-control" placeholder="123 456 789 00012" disabled>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="form-group">
-              <label class="form-control-label">{{ 'DUNS number'|trans({}, 'Admin.Global') }}</label>
-              <input type="text" class="form-control" placeholder="12-345-6789" disabled>
-            </div>
-          </div>
-        </div>
+        {{ include('@PrestaShop/Admin/Sell/BusinessEntity/Blocks/identifier_section.html.twig') }}
 
         <hr>
         <div class="row">

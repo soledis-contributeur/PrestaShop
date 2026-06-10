@@ -8,14 +8,17 @@ namespace Tests\Integration\Behaviour\Features\Context\Domain;
 
 use Address;
 use Behat\Gherkin\Node\TableNode;
+use DateTime;
 use Exception;
 use PHPUnit\Framework\Assert;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\AddBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityBillingAddress;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityId;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityIdentifierData;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityShippingAddress;
 use PrestaShopBundle\Entity\B2B\BusinessEntity;
 use PrestaShopBundle\Entity\B2B\BusinessEntityAddress;
+use PrestaShopBundle\Entity\B2B\BusinessIdentifier;
 use PrestaShopBundle\Entity\Enum\AddressTypeEnum;
 use PrestaShopBundle\Entity\Enum\BusinessEntityStatus;
 use Validate;
@@ -25,6 +28,8 @@ class BusinessEntityFeatureContext extends AbstractDomainFeatureContext
     private array $businessEntityDetails = [];
     private array $billingAddresses = [];
     private array $shippingAddresses = [];
+    private array $identifiers = [];
+    private array $businessIdentifierIds = [];
     private ?BusinessEntityId $lastBusinessEntityId;
 
     /**
@@ -74,6 +79,37 @@ class BusinessEntityFeatureContext extends AbstractDomainFeatureContext
     }
 
     /**
+     * @Given there is a business identifier :label
+     */
+    public function thereIsABusinessIdentifier(string $label)
+    {
+        $entityManager = $this->getContainer()->get('doctrine.orm.entity_manager');
+
+        $businessIdentifier = new BusinessIdentifier();
+        $businessIdentifier->setLabel($label);
+        $businessIdentifier->setCreatedAt(new DateTime());
+        $businessIdentifier->setUpdatedAt(new DateTime());
+
+        $entityManager->persist($businessIdentifier);
+        $entityManager->flush();
+
+        $this->businessIdentifierIds[$label] = $businessIdentifier->getId();
+    }
+
+    /**
+     * @Given the business entity has the following identifiers:
+     */
+    public function businessEntityHasFollowingIdentifiers(TableNode $table)
+    {
+        foreach ($table->getHash() as $row) {
+            $this->identifiers[] = new BusinessEntityIdentifierData(
+                $this->businessIdentifierIds[$row['identifier']],
+                $row['value']
+            );
+        }
+    }
+
+    /**
      * @When I add the business entity
      */
     public function iAddTheBusinessEntity()
@@ -88,7 +124,8 @@ class BusinessEntityFeatureContext extends AbstractDomainFeatureContext
             (int) ($this->businessEntityDetails['customer_group_id'] ?? 3),
             (bool) ($this->businessEntityDetails['billing_as_shipping'] ?? false),
             $this->billingAddresses,
-            $this->shippingAddresses
+            $this->shippingAddresses,
+            $this->identifiers
         );
 
         try {

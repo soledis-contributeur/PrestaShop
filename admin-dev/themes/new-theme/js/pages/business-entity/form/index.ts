@@ -3,6 +3,8 @@
  * docs/licenses/LICENSE.txt file that was distributed with this source code.
  */
 import BusinessEntityFormMap from '@pages/business-entity/form/business-entity-form-map';
+import initBusinessEntityIdentifiers from '@pages/business-entity/identifiers';
+import initBusinessEntityDuplicateIdentifierCheck from '@pages/business-entity/duplicate-identifier-check';
 import CountryPostcodeRequiredToggler from '@components/country-postcode-required-toggler';
 import CountryStateSelectionToggler from '@components/country-state-selection-toggler';
 
@@ -61,6 +63,8 @@ $(() => {
 
   initEventListenerForBusinessEntityDefaultBillingAddress();
   initEventListenerForBusinessEntityDefaultShippingAddress();
+  initBusinessEntityIdentifiers();
+  initBusinessEntityDuplicateIdentifierCheck();
 });
 
 const initEventListenerForBusinessEntityDefaultShippingAddress = () => {

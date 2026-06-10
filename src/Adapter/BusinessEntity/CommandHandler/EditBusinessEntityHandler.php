@@ -11,7 +11,10 @@ use PrestaShop\PrestaShop\Core\CommandBus\Attributes\AsCommandHandler;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\EditBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\CommandHandler\EditBusinessEntityHandlerInterface;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityNotFoundException;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessIdentifierNotFoundException;
 use PrestaShopBundle\Entity\B2B\BusinessEntity;
+use PrestaShopBundle\Entity\B2B\BusinessEntityIdentifier;
+use PrestaShopBundle\Entity\B2B\BusinessIdentifier;
 use PrestaShopBundle\Entity\Repository\BusinessEntityRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -46,6 +49,8 @@ final class EditBusinessEntityHandler implements EditBusinessEntityHandlerInterf
         $businessEntity->setStatus($command->getStatus());
         $businessEntity->setIdCustomerGroup($command->getCustomerGroupId());
 
+        $this->reconcileIdentifiers($businessEntity, $command);
+
         $this->em->flush();
 
         $message = 'Business entity updated successfully';
@@ -60,6 +65,52 @@ final class EditBusinessEntityHandler implements EditBusinessEntityHandlerInterf
                 'object_id' => $businessEntityId,
             ]
         );
+    }
+
+    /**
+     * @throws BusinessIdentifierNotFoundException
+     */
+    private function reconcileIdentifiers(BusinessEntity $businessEntity, EditBusinessEntityCommand $command): void
+    {
+        $existingByTypeId = [];
+        foreach ($businessEntity->getBusinessEntityIdentifiers() as $businessEntityIdentifier) {
+            $existingByTypeId[$businessEntityIdentifier->getBusinessIdentifier()->getId()] = $businessEntityIdentifier;
+        }
+
+        $keptTypeIds = [];
+        foreach ($command->getIdentifiers() as $identifierData) {
+            $typeId = $identifierData->getBusinessIdentifierId();
+            $keptTypeIds[$typeId] = true;
+
+            if (isset($existingByTypeId[$typeId])) {
+                $existingByTypeId[$typeId]->setValue($identifierData->getValue());
+
+                continue;
+            }
+
+            $businessIdentifier = $this->em->find(BusinessIdentifier::class, $typeId);
+
+            if (null === $businessIdentifier) {
+                throw new BusinessIdentifierNotFoundException(sprintf(
+                    'Business identifier with id %d was not found.',
+                    $typeId
+                ));
+            }
+
+            $businessEntityIdentifier = new BusinessEntityIdentifier();
+            $businessEntityIdentifier->setBusinessIdentifier($businessIdentifier);
+            $businessEntityIdentifier->setValue($identifierData->getValue());
+
+            $businessEntity->addBusinessEntityIdentifier($businessEntityIdentifier);
+            $this->em->persist($businessEntityIdentifier);
+        }
+
+        foreach ($existingByTypeId as $typeId => $businessEntityIdentifier) {
+            if (!isset($keptTypeIds[$typeId])) {
+                $businessEntity->removeBusinessEntityIdentifier($businessEntityIdentifier);
+                $this->em->remove($businessEntityIdentifier);
+            }
+        }
     }
 
     private function getModifiedFields(BusinessEntity $businessEntity, EditBusinessEntityCommand $command): array
@@ -90,6 +141,41 @@ final class EditBusinessEntityHandler implements EditBusinessEntityHandlerInterf
             $modifiedFields['customer_group_id'] = ['old' => $businessEntity->getIdCustomerGroup(), 'new' => $command->getCustomerGroupId()];
         }
 
+        $modifiedIdentifiers = $this->getModifiedIdentifiers($businessEntity, $command);
+        if ([] !== $modifiedIdentifiers) {
+            $modifiedFields['identifiers'] = $modifiedIdentifiers;
+        }
+
         return $modifiedFields;
+    }
+
+    private function getModifiedIdentifiers(BusinessEntity $businessEntity, EditBusinessEntityCommand $command): array
+    {
+        $existingValues = [];
+        foreach ($businessEntity->getBusinessEntityIdentifiers() as $businessEntityIdentifier) {
+            $existingValues[$businessEntityIdentifier->getBusinessIdentifier()->getId()] = $businessEntityIdentifier->getValue();
+        }
+
+        $newValues = [];
+        foreach ($command->getIdentifiers() as $identifierData) {
+            $newValues[$identifierData->getBusinessIdentifierId()] = $identifierData->getValue();
+        }
+
+        $modifiedIdentifiers = [];
+        foreach ($newValues as $typeId => $value) {
+            if (!array_key_exists($typeId, $existingValues)) {
+                $modifiedIdentifiers['added'][] = ['id' => $typeId, 'value' => $value];
+            } elseif ($existingValues[$typeId] !== $value) {
+                $modifiedIdentifiers['updated'][] = ['id' => $typeId, 'old' => $existingValues[$typeId], 'new' => $value];
+            }
+        }
+
+        foreach ($existingValues as $typeId => $value) {
+            if (!array_key_exists($typeId, $newValues)) {
+                $modifiedIdentifiers['removed'][] = ['id' => $typeId, 'value' => $value];
+            }
+        }
+
+        return $modifiedIdentifiers;
     }
 }

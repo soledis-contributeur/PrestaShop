@@ -10,6 +10,7 @@ use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use PrestaShopBundle\Entity\Repository\BusinessIdentifierRepository;
 
 /**
  * BusinessIdentifier.
@@ -23,7 +24,7 @@ use Doctrine\ORM\Mapping as ORM;
  *
  * @ORM\HasLifecycleCallbacks
  *
- * @ORM\Entity()
+ * @ORM\Entity(repositoryClass=BusinessIdentifierRepository::class)
  */
 class BusinessIdentifier
 {

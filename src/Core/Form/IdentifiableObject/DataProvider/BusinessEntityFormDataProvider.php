@@ -12,6 +12,7 @@ use PrestaShopBundle\Entity\Enum\BusinessEntityStatus;
 use PrestaShopBundle\Entity\Repository\BusinessEntityRepository;
 use PrestaShopBundle\Form\Admin\Sell\BusinessEntity\BusinessEntityAddressType;
 use PrestaShopBundle\Form\Admin\Sell\BusinessEntity\BusinessEntityGeneralInformationType;
+use PrestaShopBundle\Form\Admin\Sell\BusinessEntity\BusinessEntityIdentifierType;
 
 final class BusinessEntityFormDataProvider implements FormDataProviderInterface
 {
@@ -41,6 +42,14 @@ final class BusinessEntityFormDataProvider implements FormDataProviderInterface
             return $this->getDefaultData();
         }
 
+        $identifiers = [];
+        foreach ($businessEntity->getBusinessEntityIdentifiers() as $businessEntityIdentifier) {
+            $identifiers[] = [
+                BusinessEntityIdentifierType::FIELD_BUSINESS_IDENTIFIER_ID => $businessEntityIdentifier->getBusinessIdentifier()->getId(),
+                BusinessEntityIdentifierType::FIELD_VALUE => $businessEntityIdentifier->getValue(),
+            ];
+        }
+
         return [
             'general_information' => [
                 BusinessEntityGeneralInformationType::FIELD_NAME => $businessEntity->getName(),
@@ -50,6 +59,7 @@ final class BusinessEntityFormDataProvider implements FormDataProviderInterface
                 BusinessEntityGeneralInformationType::FIELD_STATUS => $businessEntity->getStatus(),
                 BusinessEntityGeneralInformationType::FIELD_CUSTOMER_GROUP_ID => $businessEntity->getIdCustomerGroup(),
             ],
+            'identifiers' => $identifiers,
             'billing_address' => [],
             'shipping_address' => [],
             'billingAddressAsShippingAddress' => true,
@@ -73,6 +83,7 @@ final class BusinessEntityFormDataProvider implements FormDataProviderInterface
                 BusinessEntityGeneralInformationType::FIELD_STATUS => BusinessEntityStatus::PENDING,
                 BusinessEntityGeneralInformationType::FIELD_CUSTOMER_GROUP_ID => self::DEFAULT_CUSTOMER_GROUP_ID,
             ],
+            'identifiers' => [],
             'billing_address' => [
                 self::DEFAULT_BILLING_ADDRESS_INDEX => [
                     BusinessEntityAddressType::FIELD_COUNTRY_ID => $this->defaultCountryId,

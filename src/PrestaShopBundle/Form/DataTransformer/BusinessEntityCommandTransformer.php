@@ -8,6 +8,7 @@ namespace PrestaShopBundle\Form\DataTransformer;
 
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityBillingAddress;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityGeneralInformation;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityIdentifierData;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityShippingAddress;
 use Symfony\Component\Form\DataTransformerInterface;
 
@@ -61,6 +62,14 @@ class BusinessEntityCommandTransformer implements DataTransformerInterface
             );
         }
 
+        $identifiers = [];
+        foreach ($value['identifiers'] ?? [] as $identifierData) {
+            $identifiers[] = new BusinessEntityIdentifierData(
+                (int) $identifierData['business_identifier_id'],
+                $identifierData['value'],
+            );
+        }
+
         return [
             'general_information' => new BusinessEntityGeneralInformation(
                 $value['general_information']['name'],
@@ -71,6 +80,7 @@ class BusinessEntityCommandTransformer implements DataTransformerInterface
                 (int) $value['shop_id'],
                 (int) $value['general_information']['customer_group_id'],
             ),
+            'identifiers' => $identifiers,
             'billing_address' => $billingAddresses,
             'shipping_address' => $shippingAddresses,
             'billingAddressAsShippingAddress' => (bool) $value['billingAddressAsShippingAddress'],

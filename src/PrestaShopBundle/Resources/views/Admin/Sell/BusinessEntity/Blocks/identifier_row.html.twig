@@ -1,0 +1,20 @@
+{#
+ # For the full copyright and license information, please view the
+ # docs/licenses/LICENSE.txt file that was distributed with this source code.
+ #}
+
+<div class="col-md-4 business-entity-identifier js-business-entity-identifier">
+  <div class="form-group">
+    <label class="form-control-label js-business-entity-identifier-label"></label>
+    <div class="d-flex align-items-center">
+      {{ form_widget(identifier.business_identifier_id) }}
+      <div class="flex-grow-1">
+        {{ form_widget(identifier.value) }}
+      </div>
+      <button type="button" class="btn btn-link js-business-entity-identifier-delete ml-2"
+              aria-label="{{ 'Delete'|trans({}, 'Admin.Actions') }}">
+        <i class="material-icons text-danger">delete</i>
+      </button>
+    </div>
+  </div>
+</div>

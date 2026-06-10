@@ -51,6 +51,15 @@ admin_business_entities_customer_b2b_filter:
   requirements:
     businessEntityId: \d+
 
+admin_business_entities_check_duplicate_identifier:
+  path: /check-duplicate-identifier
+  methods: [ POST ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\Sell\BusinessEntity\BusinessEntitiesController::checkDuplicateIdentifierAction
+    _legacy_controller: AdminBusinessEntities
+    _legacy_link: AdminBusinessEntities:checkDuplicateIdentifier
+    _legacy_feature_flag: improved_b2b
+
 admin_business_entities_bulk_delete:
   path: /bulk-delete
   methods: [ POST ]

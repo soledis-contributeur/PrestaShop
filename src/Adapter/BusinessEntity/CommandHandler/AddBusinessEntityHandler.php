@@ -16,6 +16,7 @@ use PrestaShop\PrestaShop\Core\Domain\Address\ValueObject\AddressId;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\AddBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\CommandHandler\AddBusinessEntityHandlerInterface;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityBillingAddressConstraintException;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessIdentifierNotFoundException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\UnableToCreateBusinessEntityAddress;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\AbstractBusinessEntityAddress;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityBillingAddress;
@@ -24,6 +25,8 @@ use PrestaShop\PrestaShop\Core\Domain\Country\Exception\CountryConstraintExcepti
 use PrestaShop\PrestaShop\Core\Domain\State\Exception\StateConstraintException;
 use PrestaShopBundle\Entity\B2B\BusinessEntity;
 use PrestaShopBundle\Entity\B2B\BusinessEntityAddress;
+use PrestaShopBundle\Entity\B2B\BusinessEntityIdentifier;
+use PrestaShopBundle\Entity\B2B\BusinessIdentifier;
 use PrestaShopBundle\Entity\Enum\AddressTypeEnum;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -60,6 +63,7 @@ final class AddBusinessEntityHandler implements AddBusinessEntityHandlerInterfac
 
         try {
             $this->addAddressesToBusinessEntity($businessEntity, $command);
+            $this->addIdentifiersToBusinessEntity($businessEntity, $command);
             $this->em->persist($businessEntity);
             $this->em->flush();
         } catch (Exception $e) {
@@ -113,6 +117,30 @@ final class AddBusinessEntityHandler implements AddBusinessEntityHandlerInterfac
             $businessEntityAddress->setIsDefault($item->isDefault());
 
             $businessEntity->addBusinessEntityAddress($businessEntityAddress);
+        }
+    }
+
+    /**
+     * @throws BusinessIdentifierNotFoundException
+     */
+    protected function addIdentifiersToBusinessEntity(BusinessEntity $businessEntity, AddBusinessEntityCommand $command): void
+    {
+        foreach ($command->getIdentifiers() as $identifierData) {
+            $businessIdentifier = $this->em->find(BusinessIdentifier::class, $identifierData->getBusinessIdentifierId());
+
+            if (null === $businessIdentifier) {
+                throw new BusinessIdentifierNotFoundException(sprintf(
+                    'Business identifier with id %d was not found.',
+                    $identifierData->getBusinessIdentifierId()
+                ));
+            }
+
+            $businessEntityIdentifier = new BusinessEntityIdentifier();
+            $businessEntityIdentifier->setBusinessIdentifier($businessIdentifier);
+            $businessEntityIdentifier->setValue($identifierData->getValue());
+
+            $businessEntity->addBusinessEntityIdentifier($businessEntityIdentifier);
+            $this->em->persist($businessEntityIdentifier);
         }
     }
 

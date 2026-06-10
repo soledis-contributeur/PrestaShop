@@ -17,6 +17,10 @@ Feature: Add business entity
     And the business entity has the following billing addresses:
       | alias   | address1      | city  | postcode | country_id | is_default |
       | Billing | 123 Main St   | Paris | 75001    | 8          | 1          |
+    And there is a business identifier "VAT Number"
+    And the business entity has the following identifiers:
+      | identifier | value      |
+      | VAT Number | FR12345678 |
     When I add the business entity
     Then the business entity should be successfully created
     And the business entity "Test Business Entity" should exist in the database
@@ -37,6 +41,10 @@ Feature: Add business entity
     And the business entity has the following shipping addresses:
       | alias    | address1       | city      | postcode | country_id | is_default |
       | Shipping | 789 Delivery Rd| Marseille | 13001    | 8          | 1          |
+    And there is a business identifier "VAT Number"
+    And the business entity has the following identifiers:
+      | identifier | value      |
+      | VAT Number | FR98765432 |
     When I add the business entity
     Then the business entity should be successfully created
     And the business entity "Separate Addresses Entity" should exist in the database
@@ -57,6 +65,10 @@ Feature: Add business entity
     And the business entity has the following billing addresses:
       | alias   | address1      | city     | postcode | country_id | is_default |
       | Billing | 1 Scope Rd    | Toulouse | 31000    | 8          | 1          |
+    And there is a business identifier "VAT Number"
+    And the business entity has the following identifiers:
+      | identifier | value      |
+      | VAT Number | FR55544433 |
     When I add the business entity
     Then the business entity should be successfully created
     And the business entity "Non Default Scope Entity" should exist in the database

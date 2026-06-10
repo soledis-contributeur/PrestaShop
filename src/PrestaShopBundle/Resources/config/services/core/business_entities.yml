@@ -21,6 +21,12 @@ services:
       $dbPrefix: '%database_prefix%'
       $defaultLanguageContext: '@prestashop.default.language.context'
 
+  PrestaShop\PrestaShop\Adapter\BusinessEntity\QueryHandler\CheckDuplicateBusinessIdentifierHandler:
+    autoconfigure: true
+    arguments:
+      $connection: '@doctrine.dbal.default_connection'
+      $dbPrefix: '%database_prefix%'
+
   prestashop.core.grid.data.factory.business_entity:
     class: PrestaShop\PrestaShop\Core\Grid\Data\Factory\DoctrineGridDataFactory
     arguments:
@@ -71,3 +77,10 @@ services:
       - '@prestashop.core.grid.data.factory.customer_b2b'
       - '@prestashop.core.grid.filter.form_factory'
       - '@prestashop.core.hook.dispatcher'
+
+  PrestaShopBundle\Entity\Repository\BusinessIdentifierRepository:
+    factory: [ '@doctrine.orm.entity_manager', getRepository ]
+    arguments:
+      - PrestaShopBundle\Entity\B2B\BusinessIdentifier
+
+  PrestaShop\PrestaShop\Adapter\Form\ChoiceProvider\BusinessIdentifierChoiceProvider: ~

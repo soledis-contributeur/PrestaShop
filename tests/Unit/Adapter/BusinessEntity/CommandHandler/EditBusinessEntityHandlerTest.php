@@ -12,7 +12,10 @@ use PHPUnit\Framework\TestCase;
 use PrestaShop\PrestaShop\Adapter\BusinessEntity\CommandHandler\EditBusinessEntityHandler;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\EditBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityNotFoundException;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\ValueObject\BusinessEntityIdentifierData;
 use PrestaShopBundle\Entity\B2B\BusinessEntity;
+use PrestaShopBundle\Entity\B2B\BusinessEntityIdentifier;
+use PrestaShopBundle\Entity\B2B\BusinessIdentifier;
 use PrestaShopBundle\Entity\Enum\BusinessEntityStatus;
 use PrestaShopBundle\Entity\Repository\BusinessEntityRepository;
 use Psr\Log\LoggerInterface;
@@ -25,12 +28,13 @@ class EditBusinessEntityHandlerTest extends TestCase
 
         $em = $this->createMock(EntityManagerInterface::class);
         $em->expects($this->once())->method('flush');
+        $em->method('find')->willReturn(new BusinessIdentifier());
 
         $repository = $this->createMock(BusinessEntityRepository::class);
         $repository->method('getBusinessEntityById')->with(7)->willReturn($businessEntity);
 
         $handler = new EditBusinessEntityHandler($em, $repository, $this->createMock(LoggerInterface::class));
-        $handler->handle(new EditBusinessEntityCommand(7, 'New name', 'New legal', 'NEW-REF', true, BusinessEntityStatus::ACTIVE, 9));
+        $handler->handle(new EditBusinessEntityCommand(7, 'New name', 'New legal', 'NEW-REF', true, BusinessEntityStatus::ACTIVE, 9, [new BusinessEntityIdentifierData(1, 'FR123')]));
 
         $this->assertSame('New name', $businessEntity->getName());
         $this->assertSame('New legal', $businessEntity->getLegalName());
@@ -61,13 +65,22 @@ class EditBusinessEntityHandlerTest extends TestCase
                 ['object_type' => 'BusinessEntity', 'object_id' => 7],
             );
 
-        $handler = new EditBusinessEntityHandler($this->createMock(EntityManagerInterface::class), $repository, $logger);
-        $handler->handle(new EditBusinessEntityCommand(7, 'New name', 'Old legal', 'OLD-REF', false, BusinessEntityStatus::ACTIVE, 3));
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('find')->willReturn(new BusinessIdentifier());
+
+        $handler = new EditBusinessEntityHandler($em, $repository, $logger);
+        $handler->handle(new EditBusinessEntityCommand(7, 'New name', 'Old legal', 'OLD-REF', false, BusinessEntityStatus::ACTIVE, 3, [new BusinessEntityIdentifierData(1, 'FR123')]));
     }
 
     public function testItLogsBaseMessageWhenNothingChanged(): void
     {
         $businessEntity = $this->buildBusinessEntity();
+
+        $existingType = $this->createMock(BusinessIdentifier::class);
+        $existingType->method('getId')->willReturn(1);
+        $businessEntity->addBusinessEntityIdentifier(
+            (new BusinessEntityIdentifier())->setBusinessIdentifier($existingType)->setValue('FR123')
+        );
 
         $repository = $this->createMock(BusinessEntityRepository::class);
         $repository->method('getBusinessEntityById')->willReturn($businessEntity);
@@ -80,8 +93,83 @@ class EditBusinessEntityHandlerTest extends TestCase
                 ['object_type' => 'BusinessEntity', 'object_id' => 7],
             );
 
-        $handler = new EditBusinessEntityHandler($this->createMock(EntityManagerInterface::class), $repository, $logger);
-        $handler->handle(new EditBusinessEntityCommand(7, 'Old name', 'Old legal', 'OLD-REF', false, BusinessEntityStatus::PENDING, 3));
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('find')->willReturn(new BusinessIdentifier());
+
+        $handler = new EditBusinessEntityHandler($em, $repository, $logger);
+        $handler->handle(new EditBusinessEntityCommand(7, 'Old name', 'Old legal', 'OLD-REF', false, BusinessEntityStatus::PENDING, 3, [new BusinessEntityIdentifierData(1, 'FR123')]));
+    }
+
+    public function testItReconcilesIdentifiers(): void
+    {
+        $existingType = $this->createMock(BusinessIdentifier::class);
+        $existingType->method('getId')->willReturn(1);
+        $keptIdentifier = (new BusinessEntityIdentifier())->setBusinessIdentifier($existingType)->setValue('OLD');
+
+        $removedType = $this->createMock(BusinessIdentifier::class);
+        $removedType->method('getId')->willReturn(2);
+        $removedIdentifier = (new BusinessEntityIdentifier())->setBusinessIdentifier($removedType)->setValue('REMOVE-ME');
+
+        $businessEntity = $this->buildBusinessEntity();
+        $businessEntity->addBusinessEntityIdentifier($keptIdentifier);
+        $businessEntity->addBusinessEntityIdentifier($removedIdentifier);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('find')->willReturn($this->createMock(BusinessIdentifier::class));
+        $em->expects($this->once())->method('persist');
+        $em->expects($this->once())->method('remove')->with($removedIdentifier);
+
+        $repository = $this->createMock(BusinessEntityRepository::class);
+        $repository->method('getBusinessEntityById')->willReturn($businessEntity);
+
+        $handler = new EditBusinessEntityHandler($em, $repository, $this->createMock(LoggerInterface::class));
+        $handler->handle(new EditBusinessEntityCommand(7, 'Old name', 'Old legal', 'OLD-REF', false, BusinessEntityStatus::PENDING, 3, [
+            new BusinessEntityIdentifierData(1, 'UPDATED'),
+            new BusinessEntityIdentifierData(3, 'NEW'),
+        ]));
+
+        $this->assertSame('UPDATED', $keptIdentifier->getValue());
+    }
+
+    public function testItLogsModifiedIdentifiers(): void
+    {
+        $existingType1 = $this->createMock(BusinessIdentifier::class);
+        $existingType1->method('getId')->willReturn(1);
+        $existingType2 = $this->createMock(BusinessIdentifier::class);
+        $existingType2->method('getId')->willReturn(2);
+
+        $businessEntity = $this->buildBusinessEntity();
+        $businessEntity->addBusinessEntityIdentifier(
+            (new BusinessEntityIdentifier())->setBusinessIdentifier($existingType1)->setValue('OLD')
+        );
+        $businessEntity->addBusinessEntityIdentifier(
+            (new BusinessEntityIdentifier())->setBusinessIdentifier($existingType2)->setValue('REMOVE-ME')
+        );
+
+        $repository = $this->createMock(BusinessEntityRepository::class);
+        $repository->method('getBusinessEntityById')->willReturn($businessEntity);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('info')
+            ->with(
+                $this->callback(static function (string $message): bool {
+                    return str_contains($message, '"identifiers"')
+                        && str_contains($message, '"added"')
+                        && str_contains($message, '"updated"')
+                        && str_contains($message, '"removed"');
+                }),
+                ['object_type' => 'BusinessEntity', 'object_id' => 7],
+            );
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('find')->willReturn($this->createMock(BusinessIdentifier::class));
+
+        $handler = new EditBusinessEntityHandler($em, $repository, $logger);
+        $handler->handle(new EditBusinessEntityCommand(7, 'Old name', 'Old legal', 'OLD-REF', false, BusinessEntityStatus::PENDING, 3, [
+            new BusinessEntityIdentifierData(1, 'UPDATED'),
+            new BusinessEntityIdentifierData(3, 'NEW'),
+        ]));
     }
 
     public function testItThrowsWhenBusinessEntityNotFound(): void
@@ -96,7 +184,7 @@ class EditBusinessEntityHandlerTest extends TestCase
 
         $this->expectException(BusinessEntityNotFoundException::class);
 
-        $handler->handle(new EditBusinessEntityCommand(7, 'Name', 'Legal', null, false, BusinessEntityStatus::PENDING, 3));
+        $handler->handle(new EditBusinessEntityCommand(7, 'Name', 'Legal', null, false, BusinessEntityStatus::PENDING, 3, [new BusinessEntityIdentifierData(1, 'FR123')]));
     }
 
     private function buildBusinessEntity(): BusinessEntity
