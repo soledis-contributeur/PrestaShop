@@ -16,6 +16,7 @@ use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityBil
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityConstraintException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityNotFoundException;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\CannotDeleteBusinessEntityException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\CannotUpdateBusinessEntityException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\UnableToCreateBusinessEntityAddress;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Query\GetBusinessEntityForViewing;
@@ -254,6 +255,8 @@ class BusinessEntitiesController extends PrestaShopAdminController
             );
         } catch (BusinessEntityException $e) {
             $this->addFlash('error', $this->getErrorMessageForException($e, $this->getErrorMessages()));
+        } catch (Exception $e) {
+            $this->addFlash('error', $this->getErrorMessageForException($e, $this->getErrorMessages()));
         }
 
         return $this->redirectToRoute('admin_business_entities_list');
@@ -298,6 +301,8 @@ class BusinessEntitiesController extends PrestaShopAdminController
                 )
             );
         } catch (BusinessEntityException $e) {
+            $this->addFlash('error', $this->getErrorMessageForException($e, $this->getErrorMessages()));
+        } catch (Exception $e) {
             $this->addFlash('error', $this->getErrorMessageForException($e, $this->getErrorMessages()));
         }
 
@@ -355,6 +360,11 @@ class BusinessEntitiesController extends PrestaShopAdminController
             ),
             CannotUpdateBusinessEntityException::class => $this->trans(
                 'An error occurred while updating the business entity.',
+                [],
+                'Admin.Notifications.Error'
+            ),
+            CannotDeleteBusinessEntityException::class => $this->trans(
+                'An error occurred while deleting the business entity.',
                 [],
                 'Admin.Notifications.Error'
             ),

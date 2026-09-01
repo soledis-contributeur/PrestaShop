@@ -22,10 +22,10 @@ class BusinessEntityGridDataFactoryTest extends TestCase
     public function testItAddsTranslatedStatusLabelAndBadgeTypeToEachRecordAndKeepsRawStatus(): void
     {
         $records = new RecordCollection([
-            ['id_business_entity' => 1, 'status' => 'active'],
-            ['id_business_entity' => 2, 'status' => 'pending'],
-            ['id_business_entity' => 3, 'status' => 'inactive'],
-            ['id_business_entity' => 4, 'status' => 'rejected'],
+            ['id_business_entity' => 1, 'status' => 'active', 'name' => 'Active Corp'],
+            ['id_business_entity' => 2, 'status' => 'pending', 'name' => 'Pending Corp'],
+            ['id_business_entity' => 3, 'status' => 'inactive', 'name' => 'Inactive Corp'],
+            ['id_business_entity' => 4, 'status' => 'rejected', 'name' => 'Rejected Corp'],
         ]);
 
         $query = 'SELECT be.id_business_entity FROM ps_business_entity be';
@@ -69,6 +69,90 @@ class BusinessEntityGridDataFactoryTest extends TestCase
         $this->buildFactory($inner)->getData($this->createMock(SearchCriteriaInterface::class));
     }
 
+    public function testItBuildsADeletionConfirmationMessageNamingEachEntity(): void
+    {
+        $records = new RecordCollection([
+            ['id_business_entity' => 1, 'status' => 'active', 'name' => 'Tan Emporium'],
+            ['id_business_entity' => 2, 'status' => 'pending', 'name' => 'Acme Industries'],
+        ]);
+
+        $inner = $this->createMock(GridDataFactoryInterface::class);
+        $inner->method('getData')->willReturn(new GridData($records, 2, 'SELECT 1'));
+
+        $data = $this->buildFactory($inner)->getData($this->createMock(SearchCriteriaInterface::class));
+        $result = iterator_to_array($data->getRecords());
+
+        $this->assertStringContainsString('<strong>Tan Emporium</strong>', $result[0]['delete_confirm_message']);
+        $this->assertStringContainsString('<strong>Acme Industries</strong>', $result[1]['delete_confirm_message']);
+        $this->assertStringNotContainsString(
+            '%name%',
+            $result[0]['delete_confirm_message'],
+            'the placeholder must be replaced, not shown to the merchant'
+        );
+        $this->assertStringEndsWith(
+            '<br>This action is irreversible.',
+            $result[0]['delete_confirm_message'],
+            'the mock-up puts the irreversibility warning on its own line'
+        );
+    }
+
+    /**
+     * AC2 spells the sentence out. Pin it whole, plus the translation domains: a wrong domain makes
+     * the string silently untranslatable while every other assertion here still passes.
+     */
+    public function testTheDeletionMessageIsTheOneAC2AsksForAndUsesTheRightDomains(): void
+    {
+        $records = new RecordCollection([
+            ['id_business_entity' => 1, 'status' => 'active', 'name' => 'Acme Industries'],
+        ]);
+
+        $inner = $this->createMock(GridDataFactoryInterface::class);
+        $inner->method('getData')->willReturn(new GridData($records, 1, 'SELECT 1'));
+
+        $domains = [];
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator->method('trans')->willReturnCallback(
+            static function (string $id, array $parameters = [], ?string $domain = null) use (&$domains): string {
+                $domains[$id] = $domain;
+
+                return strtr($id, $parameters);
+            }
+        );
+
+        $factory = new BusinessEntityGridDataFactory($inner, $translator);
+        $message = iterator_to_array($factory->getData($this->createMock(SearchCriteriaInterface::class))->getRecords())[0]['delete_confirm_message'];
+
+        $this->assertSame(
+            'Are you sure you want to delete <strong>Acme Industries</strong> from the list of business entities?'
+            . '<br>This action is irreversible.',
+            $message
+        );
+
+        $this->assertSame(
+            'Admin.Orderscustomers.Feature',
+            $domains['Are you sure you want to delete %name% from the list of business entities?']
+        );
+        $this->assertSame('Admin.Notifications.Warning', $domains['This action is irreversible.']);
+    }
+
+    public function testItEscapesTheEntityNameInTheDeletionMessage(): void
+    {
+        // The confirmation modal assigns the message with innerHTML, so a name carrying markup
+        // must reach the merchant as text and never as live HTML.
+        $records = new RecordCollection([
+            ['id_business_entity' => 1, 'status' => 'active', 'name' => '<img src=x onerror=alert(1)>'],
+        ]);
+
+        $inner = $this->createMock(GridDataFactoryInterface::class);
+        $inner->method('getData')->willReturn(new GridData($records, 1, 'SELECT 1'));
+
+        $data = $this->buildFactory($inner)->getData($this->createMock(SearchCriteriaInterface::class));
+        $message = iterator_to_array($data->getRecords())[0]['delete_confirm_message'];
+
+        $this->assertStringNotContainsString('<img', $message);
+        $this->assertStringContainsString('&lt;img src=x onerror=alert(1)&gt;', $message);
+    }
+
     public function testItForwardsTheInnerRecordsTotalAndQueryUnchanged(): void
     {
         $query = 'SELECT be.id_business_entity FROM ps_business_entity be WHERE be.deleted = 0';
@@ -85,8 +169,11 @@ class BusinessEntityGridDataFactoryTest extends TestCase
     private function buildFactory(GridDataFactoryInterface $inner): BusinessEntityGridDataFactory
     {
         $translator = $this->createMock(TranslatorInterface::class);
-        // trans() echoes the source string so we can assert the label went through translation.
-        $translator->method('trans')->willReturnCallback(static fn (string $id): string => $id);
+        // trans() echoes the source string with its parameters applied, so we can assert both that
+        // the label went through translation and that the placeholders were actually replaced.
+        $translator->method('trans')->willReturnCallback(
+            static fn (string $id, array $parameters = []): string => strtr($id, $parameters)
+        );
 
         return new BusinessEntityGridDataFactory($inner, $translator);
     }

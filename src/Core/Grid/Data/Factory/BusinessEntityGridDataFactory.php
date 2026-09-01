@@ -18,7 +18,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * Decorates the business entity grid data with the translated status label and the badge
  * type expected by BadgeColumn, so the Status badge is localized and colored like the
- * detail view and the status filter choices.
+ * detail view and the status filter choices, and with the per-row deletion confirmation
+ * message, which names the entity as the user story requires.
  */
 final class BusinessEntityGridDataFactory implements GridDataFactoryInterface
 {
@@ -36,19 +37,28 @@ final class BusinessEntityGridDataFactory implements GridDataFactoryInterface
         $data = $this->businessEntityDataFactory->getData($searchCriteria);
 
         return new GridData(
-            $this->addStatusPresentation($data->getRecords()),
+            $this->addPresentationFields($data->getRecords()),
             $data->getRecordsTotal(),
             $data->getQuery()
         );
     }
 
-    private function addStatusPresentation(RecordCollectionInterface $records): RecordCollectionInterface
+    private function addPresentationFields(RecordCollectionInterface $records): RecordCollectionInterface
     {
         $modifiedRecords = [];
         foreach ($records as $record) {
             $status = BusinessEntityStatus::from((string) $record['status']);
             $record['status_label'] = $status->trans($this->translator);
             $record['status_badge_type'] = $status->badgeType();
+            // The confirmation modal injects this message with innerHTML, so the merchant-entered
+            // name is escaped here and only the emphasis markup is meant to be interpreted.
+            $record['delete_confirm_message'] = $this->translator->trans(
+                'Are you sure you want to delete %name% from the list of business entities?',
+                ['%name%' => '<strong>' . htmlspecialchars((string) $record['name'], ENT_QUOTES, 'UTF-8') . '</strong>'],
+                'Admin.Orderscustomers.Feature'
+            )
+                . '<br>'
+                . $this->translator->trans('This action is irreversible.', [], 'Admin.Notifications.Warning');
             $modifiedRecords[] = $record;
         }
 

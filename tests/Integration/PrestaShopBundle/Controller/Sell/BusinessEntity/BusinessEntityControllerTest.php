@@ -322,6 +322,108 @@ class BusinessEntityControllerTest extends GridControllerTestCase
         return sprintf('business_entity[general_information][%s][%s]', $sections[$field], $field);
     }
 
+    /**
+     * AC1 + AC2. The action column renders the FIRST regular action outside the dropdown, so with
+     * three actions a reorder in the definition factory would silently promote Delete to the
+     * visible button. The modal chrome is asserted here because it only exists in the rendered
+     * markup: the unit test on the data factory covers the message body, nothing else.
+     */
+    public function testTheListOffersDeleteInTheKebabWithItsConfirmationModal(): void
+    {
+        $crawler = $this->client->request('GET', $this->generateGridUrl());
+        $this->assertResponseIsSuccessful();
+
+        $deleteAction = $crawler->filter(sprintf(
+            '%s .dropdown-menu a[data-url*="/%d/delete"]',
+            $this->getGridSelector(),
+            self::$activeBusinessEntityId
+        ));
+
+        $this->assertCount(1, $deleteAction, 'AC1: Delete must sit inside the kebab menu');
+        $this->assertSame('Delete this business entity', $deleteAction->attr('data-title'));
+        $this->assertSame('Yes, I want to delete this entity', $deleteAction->attr('data-confirm-button-label'));
+        $this->assertSame('btn-danger', $deleteAction->attr('data-confirm-button-class'));
+        $this->assertStringContainsString(
+            self::ACTIVE_COMPANY_NAME,
+            (string) $deleteAction->attr('data-confirm-message'),
+            'AC2: the confirmation message must name the entity'
+        );
+    }
+
+    /**
+     * The checkbox name is built by the grid framework as "<grid id>_<column id>[]", while
+     * BusinessEntitiesController re-composes that same key by hand. If either side drifts the
+     * controller reads an empty array and redirects with NO flash at all: a silent no-op that no
+     * other test would catch. This is the drift detector.
+     */
+    public function testTheBulkCheckboxCarriesTheKeyTheControllerReads(): void
+    {
+        $crawler = $this->client->request('GET', $this->generateGridUrl());
+        $this->assertResponseIsSuccessful();
+
+        $this->assertGreaterThan(
+            0,
+            $crawler->filter(sprintf('%s input[name="business_entity_business_entities_bulk[]"]', $this->getGridSelector()))->count(),
+            'The bulk checkbox name must match the key read by BusinessEntitiesController::bulkDeleteAction()'
+        );
+    }
+
+    /**
+     * AC4: the soft-deleted entity must no longer appear in the standard list view.
+     */
+    public function testDeletingAnEntityRemovesItFromTheList(): void
+    {
+        $this->client->disableReboot();
+
+        $commandBus = $this->client->getContainer()->get('prestashop.core.command_bus');
+        $doomedId = self::createBusinessEntity($commandBus, 'Doomed company', 'Doomed legal name', BusinessEntityStatus::ACTIVE);
+
+        $this->assertCollectionContainsEntity($this->getEntitiesFromGrid(), $doomedId);
+
+        $this->deleteEntityFromPage('admin_business_entities_delete', ['businessEntityId' => $doomedId]);
+
+        $crawler = $this->client->followRedirect();
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString(
+            'Successful deletion.',
+            $crawler->filter('.alert-success .alert-text')->text(),
+            'AC4: a success message must be shown'
+        );
+
+        $remaining = $this->getEntitiesFromGrid();
+        foreach ($remaining as $entity) {
+            $this->assertNotSame($doomedId, $entity->getId(), 'AC4: the deleted entity must be gone from the list');
+        }
+    }
+
+    /**
+     * The bulk path end to end, through the real POST key.
+     */
+    public function testBulkDeletingEntitiesRemovesThemFromTheList(): void
+    {
+        $this->client->disableReboot();
+
+        $commandBus = $this->client->getContainer()->get('prestashop.core.command_bus');
+        $firstId = self::createBusinessEntity($commandBus, 'Bulk doomed one', 'Bulk legal one', BusinessEntityStatus::ACTIVE);
+        $secondId = self::createBusinessEntity($commandBus, 'Bulk doomed two', 'Bulk legal two', BusinessEntityStatus::ACTIVE);
+
+        $this->bulkDeleteEntitiesFromPage(
+            'admin_business_entities_bulk_delete',
+            ['business_entity_business_entities_bulk' => [$firstId, $secondId]]
+        );
+
+        $this->client->followRedirect();
+        $this->assertResponseIsSuccessful();
+
+        $remainingIds = [];
+        foreach ($this->getEntitiesFromGrid() as $entity) {
+            $remainingIds[] = $entity->getId();
+        }
+
+        $this->assertNotContains($firstId, $remainingIds);
+        $this->assertNotContains($secondId, $remainingIds);
+    }
+
     private static function createBusinessEntity(
         CommandBusInterface $commandBus,
         string $name,

@@ -82,6 +82,34 @@ class BulkDeleteBusinessEntityHandlerTest extends TestCase
         $handler->handle(new BulkDeleteBusinessEntityCommand([4]));
     }
 
+    /**
+     * AC5. The bulk path duplicates the single path's log call by hand (handlers never call other
+     * handlers), so nothing keeps the two in sync unless this test does.
+     */
+    public function testItLogsEveryDeletionWithItsObjectId(): void
+    {
+        $repository = $this->createMock(BusinessEntityRepository::class);
+        $repository->method('findById')->willReturnMap([
+            [4, null, new BusinessEntity()],
+            [8, null, new BusinessEntity()],
+        ]);
+
+        $loggedIds = [];
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->exactly(2))->method('info')->willReturnCallback(
+            function (string $message, array $context) use (&$loggedIds): void {
+                $this->assertSame('Business entity deleted successfully', $message);
+                $this->assertSame('BusinessEntity', $context['object_type']);
+                $loggedIds[] = $context['object_id'];
+            }
+        );
+
+        $handler = new BulkDeleteBusinessEntityHandler($repository, $this->allShopContext(), $logger);
+        $handler->handle(new BulkDeleteBusinessEntityCommand([4, 8]));
+
+        $this->assertSame([4, 8], $loggedIds, 'the log must carry the raw id, not the value object');
+    }
+
     private function allShopContext(): ShopContext
     {
         $shopContext = $this->createMock(ShopContext::class);

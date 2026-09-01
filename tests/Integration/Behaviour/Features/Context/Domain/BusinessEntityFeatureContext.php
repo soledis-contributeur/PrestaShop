@@ -12,13 +12,13 @@ use Address;
 use Behat\Gherkin\Node\TableNode;
 use DateTime;
 use DateTimeImmutable;
-use Exception;
 use PHPUnit\Framework\Assert;
 use PrestaShop\PrestaShop\Core\Context\ShopContextBuilder;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\AddBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\BulkDeleteBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\DeleteBusinessEntityCommand;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Command\EditBusinessEntityCommand;
+use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BulkDeleteBusinessEntityException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Exception\BusinessEntityNotFoundException;
 use PrestaShop\PrestaShop\Core\Domain\BusinessEntity\Query\GetBusinessEntityForEditing;
@@ -623,7 +623,7 @@ class BusinessEntityFeatureContext extends AbstractDomainFeatureContext
 
         try {
             $this->getCommandBus()->handle(new DeleteBusinessEntityCommand($businessEntity->getId()));
-        } catch (Exception $e) {
+        } catch (BusinessEntityException $e) {
             $this->setLastException($e);
         }
     }
@@ -640,9 +640,50 @@ class BusinessEntityFeatureContext extends AbstractDomainFeatureContext
 
         try {
             $this->getCommandBus()->handle(new BulkDeleteBusinessEntityCommand($ids));
-        } catch (Exception $e) {
+        } catch (BusinessEntityException $e) {
             $this->setLastException($e);
         }
+    }
+
+    /**
+     * @When I bulk delete the business entities with ids :ids
+     */
+    public function iBulkDeleteTheBusinessEntitiesWithIds(string $ids): void
+    {
+        $businessEntityIds = array_map('intval', array_map('trim', explode(',', $ids)));
+
+        try {
+            $this->getCommandBus()->handle(new BulkDeleteBusinessEntityCommand($businessEntityIds));
+        } catch (BusinessEntityException $e) {
+            $this->setLastException($e);
+        }
+    }
+
+    /**
+     * @When I bulk delete an empty selection of business entities
+     */
+    public function iBulkDeleteAnEmptySelection(): void
+    {
+        try {
+            $this->getCommandBus()->handle(new BulkDeleteBusinessEntityCommand([]));
+        } catch (BusinessEntityException $e) {
+            $this->setLastException($e);
+        }
+    }
+
+    /**
+     * @Then I should get a bulk delete error reporting :count failure(s)
+     */
+    public function assertLastErrorIsBulkDeleteWithFailures(int $count): void
+    {
+        /** @var BulkDeleteBusinessEntityException $exception */
+        $exception = $this->assertLastErrorIs(BulkDeleteBusinessEntityException::class);
+
+        Assert::assertCount(
+            $count,
+            $exception->getExceptions(),
+            sprintf('Expected the bulk delete to report %d failure(s)', $count)
+        );
     }
 
     /**
@@ -668,9 +709,12 @@ class BusinessEntityFeatureContext extends AbstractDomainFeatureContext
     }
 
     /**
-     * @Then the business entity :name should no longer appear in the business entities list
+     * Asserts the repository, which is what this context can reach. AC4's "no longer appears in
+     * the list" is covered at HTTP level by BusinessEntityControllerTest.
+     *
+     * @Then the business entity :name should no longer be returned by the repository
      */
-    public function businessEntityShouldNoLongerAppearInList(string $name)
+    public function businessEntityShouldNoLongerBeReturnedByTheRepository(string $name)
     {
         $businessEntityId = $this->getBusinessEntityByName($name)->getId();
 
@@ -680,7 +724,7 @@ class BusinessEntityFeatureContext extends AbstractDomainFeatureContext
 
         Assert::assertNull(
             $businessEntity,
-            sprintf('Business entity "%s" should no longer be visible in the standard list', $name)
+            sprintf('Business entity "%s" should no longer be returned by the repository', $name)
         );
     }
 

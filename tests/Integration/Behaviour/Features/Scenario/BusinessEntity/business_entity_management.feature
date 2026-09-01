@@ -291,7 +291,7 @@ Feature: Manage business entities
     Given there is a business entity named "Deletable Corp" with status "active"
     When I delete the business entity "Deletable Corp"
     Then the business entity "Deletable Corp" should be soft deleted
-    And the business entity "Deletable Corp" should no longer appear in the business entities list
+    And the business entity "Deletable Corp" should no longer be returned by the repository
 
   Scenario: Bulk delete business entities leaves non-selected entities untouched
     Given there is a business entity named "Bulk One" with status "active"
@@ -299,9 +299,22 @@ Feature: Manage business entities
     And there is a business entity named "Bulk Keep" with status "active"
     When I bulk delete the business entities "Bulk One, Bulk Two"
     Then the business entity "Bulk One" should be soft deleted
-    And the business entity "Bulk One" should no longer appear in the business entities list
+    And the business entity "Bulk One" should no longer be returned by the repository
     And the business entity "Bulk Two" should be soft deleted
     And the business entity "Bulk Keep" should not be deleted
+
+  Scenario: Bulk deleting an empty selection does nothing and raises no error
+    Given there is a business entity named "Untouched Corp" with status "active"
+    When I bulk delete an empty selection of business entities
+    Then the business entity "Untouched Corp" should not be deleted
+
+  # Only one bulk scenario may fail per run: AbstractBulkCommandHandler never resets its $exceptions,
+  # so a second failing bulk in the same process reports the previous failures on top of its own.
+  Scenario: Bulk deleting a selection that contains an unknown id reports the failure
+    Given there is a business entity named "Survivor Corp" with status "active"
+    When I bulk delete the business entities with ids "999999"
+    Then I should get a bulk delete error reporting 1 failure
+    And the business entity "Survivor Corp" should not be deleted
 
   Scenario: Deleting a business entity that does not exist raises a not found error
     When I delete the business entity with id 999999
